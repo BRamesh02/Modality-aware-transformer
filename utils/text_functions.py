@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 import pandas_market_calendars as mcal
 import pandas as pd
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import re
 import hashlib
@@ -206,4 +206,42 @@ def add_effective_date(ex: Dict[str, Any]) -> Dict[str, Any]:
         next_trading_day_nyse(dt.date()).isoformat()
         if dt is not None else None
     )
+    return ex
+
+
+def choose_text_title_first(ex: Dict[str, Any]) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Choose a single text field for NLP. Here: title-first (robust for FNSPID).
+    Returns (text, source).
+    """
+    title = ex.get("title")
+    if title:
+        return title, "title"
+
+    # Fallbacks (rarely used, but safe)
+    for field, name in [
+        ("textrank_summary", "textrank"),
+        ("lexrank_summary", "lexrank"),
+        ("lsa_summary", "lsa"),
+        ("luhn_summary", "luhn"),
+        ("article", "article"),
+    ]:
+        v = ex.get(field)
+        if v:
+            return v, name
+
+    return None, None
+
+
+def add_chosen_text(ex: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Add:
+      - text: chosen string for downstream NLP
+      - text_source: which field was used
+      - text_len: word count (0 if missing)
+    """
+    text, src = choose_text_title_first(ex)
+    ex["text"] = text
+    ex["text_source"] = src
+    ex["text_len"] = len(text.split()) if isinstance(text, str) else 0
     return ex
