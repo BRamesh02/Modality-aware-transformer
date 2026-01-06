@@ -5,12 +5,26 @@ import numpy as np
 from pathlib import Path
 from dotenv import load_dotenv
 
-# --- 1. ROBUST ENV LOADING ---
+# --- 1. SETUP PATHS & IMPORTS ---
+# Add the project root to sys.path so we can import from 'src'
+current_dir = Path(__file__).resolve().parent
+project_root = current_dir.parent
+sys.path.append(str(project_root))
+
+# Import the centralized client from your clean architecture
+try:
+    from src.data.wrds_client import WRDSClient
+except ImportError:
+    print("⚠️  Could not import WRDSClient from src.data.")
+    print("   Ensure you are running this from the 'scripts/' folder and 'src/' exists at the root.")
+    sys.exit(1)
+
+# --- 2. ROBUST ENV LOADING ---
 def load_env_robust():
     """Tries to find .env in current dir or parent dir."""
-    script_path = Path(__file__).resolve()
     possible_paths = [
-        script_path.parent / ".env",          # Same folder
+        current_dir / ".env",          # scripts/.env
+        project_root / ".env"          # root/.env
     ]
     
     env_found = False
@@ -26,43 +40,13 @@ def load_env_robust():
 load_env_robust()
 
 # --- CONFIG ---
-# Determine Base Directory (Project Root)
-# Assuming script is in 'scripts/', root is one level up.
-BASE_DIR = Path(__file__).resolve().parent 
+# BASE_DIR is the project root
+BASE_DIR = project_root
 
-INPUT_DIR = BASE_DIR / "data" / "final_parts"
+INPUT_DIR = BASE_DIR / "data" / "processed"
 OUTPUT_FILE = BASE_DIR / "data" / "processed" / "linked_embeddings.parquet"
 MAPPING_FILE = BASE_DIR / "data" / "raw" / "crsp_ticker_map.parquet"
-
-# NEW: Universe File Configuration
 UNIVERSE_FILE = BASE_DIR / "data" / "processed" / "sp500_universe.parquet"
-
-# --- HARDCODED WRDS CLIENT ---
-try:
-    import wrds
-except ImportError:
-    wrds = None
-
-class WRDSClient:
-    def __init__(self):
-        if wrds is None:
-            raise ImportError("The 'wrds' library is required. Install it via 'pip install wrds'")
-        
-        self.username = os.getenv("WRDS_USERNAME")
-        if not self.username:
-            print("⚠️  WRDS_USERNAME not in env. Attempting system default connection...")
-        else:
-            print(f"[WRDS] Connecting as user: {self.username}...")
-            
-        self.db = wrds.Connection(wrds_username=self.username)
-
-    def query(self, sql: str) -> pd.DataFrame:
-        print("[WRDS] Executing query...")
-        return self.db.raw_sql(sql)
-
-    def close(self):
-        self.db.close()
-        print("[WRDS] Connection closed.")
 
 # --- CORE LOGIC ---
 
@@ -201,33 +185,23 @@ def filter_by_universe(df_data, universe_path):
     df_wide = pd.read_parquet(universe_path)
     
     # 2. Convert to Long Format (Date, Permno)
-    # stack() converts the column headers (permnos) into a row index level
     print("  -> Converting universe from Wide to Long format...")
     
-    # Check if index is date
     if not isinstance(df_wide.index, pd.DatetimeIndex):
         df_wide.index = pd.to_datetime(df_wide.index)
 
-    # Stack: Creates MultiIndex (Date, Permno)
-    # We dropna=True by default to remove empty entries if it's a sparse matrix
     series_long = df_wide.stack()
     
-    # If the universe file uses Booleans (True/False), filter for True only
     if series_long.dtype == bool:
         series_long = series_long[series_long]
         
-    # Reset index to get a clean DataFrame of valid pairs
     df_univ_long = series_long.reset_index()
-    
-    # Rename columns. 
-    # level_0 is index (Date), level_1 is columns (Permno), 0 is the value
     df_univ_long.columns = ["date", "permno", "val"]
     
     # 3. Data Type Standardization
     df_univ_long["date"] = pd.to_datetime(df_univ_long["date"]).dt.normalize()
     df_data["date"] = pd.to_datetime(df_data["date"]).dt.normalize()
     
-    # Convert permnos to float/int to match
     df_univ_long["permno"] = pd.to_numeric(df_univ_long["permno"], errors='coerce')
     df_data["permno"] = pd.to_numeric(df_data["permno"], errors='coerce')
 
@@ -235,7 +209,7 @@ def filter_by_universe(df_data, universe_path):
     initial_len = len(df_data)
     
     df_filtered = df_data.merge(
-        df_univ_long[["date", "permno"]], # Only need keys
+        df_univ_long[["date", "permno"]], 
         on=["date", "permno"],
         how="inner"
     )
@@ -248,19 +222,15 @@ def filter_by_universe(df_data, universe_path):
 
 def optimize_and_save(df: pd.DataFrame, output_path: Path):
     """
-    Optimizes the dataframe for faster saving:
-    1. Downcasts float64 -> float32 (Halves memory/write size).
-    2. Uses 'snappy' compression (Fastest write speed).
+    Optimizes the dataframe for faster saving.
     """
     print(f"\n[Save] Optimizing data types before writing...")
     
-    # 1. Downcast Float64 to Float32
     float_cols = df.select_dtypes(include=['float64']).columns
     if len(float_cols) > 0:
         print(f"  -> Downcasting {len(float_cols)} float64 columns to float32...")
         df[float_cols] = df[float_cols].astype('float32')
         
-    # 2. Save with Snappy
     print(f"[Save] Writing to disk: {output_path}...")
     try:
         df.to_parquet(output_path, engine="pyarrow", compression="snappy", index=False)
@@ -281,14 +251,13 @@ def main():
     # 3. Execute Mapping
     df_linked = map_point_in_time(df_friend, df_map)
     
-    # 4. Filter by Universe (NEW STEP)
+    # 4. Filter by Universe
     df_linked = filter_by_universe(df_linked, UNIVERSE_FILE)
     
     # 5. Show Stats
     match_rate = df_linked["permno"].notna().mean()
     print(f"\nFinal Match Rate: {match_rate:.2%}")
     
-    # Dynamic Print
     ticker_col = "stock_symbol" if "stock_symbol" in df_linked.columns else "ticker"
     cols_to_print = ["date", ticker_col, "permno", "comnam"]
     existing_cols = [c for c in cols_to_print if c in df_linked.columns]
