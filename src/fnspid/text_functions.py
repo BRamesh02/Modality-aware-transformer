@@ -208,6 +208,93 @@ def add_effective_date(ex: Dict[str, Any]) -> Dict[str, Any]:
     )
     return ex
 
+# ======================
+# Trading day helpers (keep same day if trading, else next)
+# ======================
+
+def is_trading_day_nyse(d: date) -> bool:
+    """
+    True if date d is a NYSE trading day.
+    """
+    ts = pd.Timestamp(d)
+    pos = _TRADING_DAYS.searchsorted(ts, side="left")
+    return pos < len(_TRADING_DAYS) and _TRADING_DAYS[pos].date() == d
+
+
+def same_or_next_trading_day_nyse(d: date) -> Optional[date]:
+    """
+    Return d if it's a trading day; otherwise return the next trading day after d.
+    """
+    if is_trading_day_nyse(d):
+        return d
+    return next_trading_day_nyse(d)
+
+
+def add_effective_date_keep_same(ex: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    effective_date = same day if trading day, else next trading day.
+    Stored as ISO string YYYY-MM-DD.
+    """
+    dt = ex.get("dt_utc")
+    ex["effective_date"] = (
+        same_or_next_trading_day_nyse(dt.date()).isoformat()
+        if dt is not None else None
+    )
+    return ex
+
+
+# ======================
+# Normalization helpers for dedup + headline-only pipeline
+# ======================
+
+def norm_url(url: Any) -> Optional[str]:
+    """
+    Lower + strip. Returns None if empty.
+    """
+    s = clean_str(url)
+    return s.lower() if s else None
+
+
+def norm_title_key(title: Any) -> Optional[str]:
+    """
+    Normalization for duplicate detection on title (fallback).
+    Keeps it simple: lowercase + collapse spaces.
+    """
+    s = clean_str(title)
+    return s.lower() if s else None
+
+
+def make_df_dedup_key(
+    url: Any,
+    stock_symbol: Any,
+    pub_day: Any,
+    title: Any,
+) -> str:
+    """
+    DataFrame-friendly dedup key:
+      - if URL exists: key = U:<url_norm>|<sym>|<pub_day>
+      - else: key = H:<hash(title_norm|sym|pub_day)>
+    pub_day should be date-like or string 'YYYY-MM-DD'.
+    """
+    u = norm_url(url)
+    sym = clean_str(stock_symbol) or ""
+    t = norm_title_key(title) or ""
+
+    # normalize pub_day to string
+    if isinstance(pub_day, (datetime, pd.Timestamp)):
+        d = pub_day.date().isoformat()
+    elif isinstance(pub_day, date):
+        d = pub_day.isoformat()
+    else:
+        d = str(pub_day) if pub_day is not None else ""
+
+    if u:
+        return f"U:{u}|{sym}|{d}"
+
+    base = f"{t}|{sym}|{d}"
+    h = hashlib.blake2b(base.encode("utf-8"), digest_size=16).hexdigest()
+    return "H:" + h
+
 
 def choose_text_title_first(ex: Dict[str, Any]) -> Tuple[Optional[str], Optional[str]]:
     """
