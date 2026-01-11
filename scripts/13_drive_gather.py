@@ -8,8 +8,6 @@ sys.path.append(str(project_root))
 
 from src.utils.drive_downloads import download_drive_files
 
-# CONFIG (paths robustes)
-
 IDS_PATH = project_root / "config" / "drive_ids.json"
 DATA_DIR = project_root / "data"
 

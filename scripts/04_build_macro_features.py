@@ -7,8 +7,8 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 load_dotenv(project_root / ".env")
 
-from src.data.fred_client import FredClient
-from src.data.features_macro import (
+from src.numerical_data.fred_client import FredClient
+from src.numerical_data.features_macro import (
     process_monthly_macro, 
     process_daily_macro, 
     merge_and_format_macro

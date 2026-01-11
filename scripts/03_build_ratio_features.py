@@ -7,8 +7,8 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 load_dotenv(project_root / ".env")
 
-from src.data.wrds_client import WRDSClient
-from src.data.features_ratios import (
+from src.numerical_data.wrds_client import WRDSClient
+from src.numerical_data.features_ratios import (
     clean_and_merge_ratios,
     impute_ratios,
     compute_ratio_indicators,

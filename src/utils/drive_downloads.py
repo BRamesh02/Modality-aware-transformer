@@ -24,7 +24,6 @@ def download_drive_files(file_map, out_dir, prefix="", sleep_sec=1.5, ext=".parq
     paths = []
 
     if isinstance(file_map, list):
-        # Cas spécial: liste singleton
         if len(file_map) == 1:
             out = out_dir / f"{prefix}{ext}"
             p = _download_one(file_map[0], out, sleep_sec)

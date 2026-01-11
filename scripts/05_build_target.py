@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
-from src.data.target import compute_vol_scaled_returns
+from src.numerical_data.target import compute_vol_scaled_returns
 
 MARKET_FILE = project_root / "data" / "processed" / "features_market.parquet"
 OUTPUT_FILE = project_root / "data" / "processed" / "target.parquet"

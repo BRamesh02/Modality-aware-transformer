@@ -6,8 +6,8 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 load_dotenv(project_root / ".env")
 
-from src.data.wrds_client import WRDSClient
-from src.data.universe import build_full_presence_matrix
+from src.numerical_data.wrds_client import WRDSClient
+from src.numerical_data.universe import build_full_presence_matrix
 
 RAW_DIR = project_root / "data" / "raw"
 LEGACY_DIR = RAW_DIR / "wrds_sp500_constituents"

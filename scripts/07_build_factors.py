@@ -9,8 +9,8 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 load_dotenv(project_root / ".env")
 
-from src.data.wrds_client import WRDSClient
-from src.data.factors import (
+from src.numerical_data.wrds_client import WRDSClient
+from src.numerical_data.factors import (
     construct_rank_factor, 
     compute_risk_metrics, 
     compute_quality_score,
@@ -19,7 +19,7 @@ from src.data.factors import (
 
 PROCESSED_DIR = project_root / "data" / "processed"
 UNIVERSE_FILE = PROCESSED_DIR / "sp500_universe.parquet" 
-MKT_FILE = PROCESSED_DIR / "features_market.parquet"
+MARKET_FILE = PROCESSED_DIR / "features_market.parquet"
 RATIO_FILE = PROCESSED_DIR / "features_ratios.parquet"
 RETURNS_FILE = PROCESSED_DIR / "returns.parquet"
 OUTPUT_FILE = PROCESSED_DIR / "factors_returns.parquet" 
@@ -31,7 +31,7 @@ def main():
     
     print("Loading Data...")
     df_univ_wide = pd.read_parquet(UNIVERSE_FILE)
-    df_mkt = pd.read_parquet(MKT_FILE)
+    df_mkt = pd.read_parquet(MARKET_FILE)
     df_ratio = pd.read_parquet(RATIO_FILE)
     df_ret = pd.read_parquet(RETURNS_FILE)
     

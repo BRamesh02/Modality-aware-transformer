@@ -65,7 +65,6 @@ def store_raw_articles_parquet(
             buffer.clear()
             chunk_id += 1
 
-    # last chunk
     if buffer:
         df = pd.DataFrame(buffer)
         df.to_parquet(

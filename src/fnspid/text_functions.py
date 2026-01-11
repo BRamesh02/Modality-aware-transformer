@@ -6,9 +6,6 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 import re
 import hashlib
 
-
-# Constantes
-
 DEFAULT_KEEP_FIELDS: List[str] = [
     "Date", "Stock_symbol", "Url", "Publisher", "Author",
     "Article_title", "Article",
@@ -17,8 +14,6 @@ DEFAULT_KEEP_FIELDS: List[str] = [
 
 WS_RE = re.compile(r"\s+")
 
-
-# Helpers de nettoyage
 
 def clean_str(s: Any) -> Optional[str]:
     """
@@ -46,7 +41,6 @@ def parse_dt_utc(date_str: Any) -> Optional[datetime]:
     if s is None:
         return None
 
-    # Enlever suffixe explicite "UTC" si présent
     s = s.replace(" UTC", "").strip()
 
     try:
@@ -54,9 +48,6 @@ def parse_dt_utc(date_str: Any) -> Optional[datetime]:
         return dt
     except ValueError:
         return None
-
-
-# Sélection de colonnes
 
 
 def make_projector(keep_fields: Sequence[str] = DEFAULT_KEEP_FIELDS):
@@ -97,11 +88,9 @@ def build_text_record(ex: Dict[str, Any]) -> Dict[str, Any]:
         "lexrank_summary": lexrank,
         "lsa_summary": lsa,
         "luhn_summary": luhn,
-        # "text_fallback": article or textrank or lexrank or lsa or luhn or title,
     }
 
 
-# Validations
 
 def is_valid_record(ex: Dict[str, Any], min_text_len: int = 20) -> bool:
     """
@@ -127,8 +116,6 @@ def is_valid_record(ex: Dict[str, Any], min_text_len: int = 20) -> bool:
 
     texts = [t for t in text_fields if isinstance(t, str) and len(t) >= min_text_len]
     return len(texts) > 0
-
-# Dédoublonnage streaming-friendly (but retirer les quasi doublons)
 
 
 def make_dedup_key(ex: Dict[str, Any]) -> str:
@@ -176,8 +163,6 @@ def dedup_stream(
 
         yield ex
 
-# Aligner sur business days
-# Calendrier NYSE
 
 
 _nyse = mcal.get_calendar("NYSE")
@@ -208,9 +193,6 @@ def add_effective_date(ex: Dict[str, Any]) -> Dict[str, Any]:
     )
     return ex
 
-# ======================
-# Trading day helpers (keep same day if trading, else next)
-# ======================
 
 def is_trading_day_nyse(d: date) -> bool:
     """
@@ -242,10 +224,6 @@ def add_effective_date_keep_same(ex: Dict[str, Any]) -> Dict[str, Any]:
     )
     return ex
 
-
-# ======================
-# Normalization helpers for dedup + headline-only pipeline
-# ======================
 
 def norm_url(url: Any) -> Optional[str]:
     """
@@ -280,7 +258,6 @@ def make_df_dedup_key(
     sym = clean_str(stock_symbol) or ""
     t = norm_title_key(title) or ""
 
-    # normalize pub_day to string
     if isinstance(pub_day, (datetime, pd.Timestamp)):
         d = pub_day.date().isoformat()
     elif isinstance(pub_day, date):
@@ -305,7 +282,6 @@ def choose_text_title_first(ex: Dict[str, Any]) -> Tuple[Optional[str], Optional
     if title:
         return title, "title"
 
-    # Fallbacks (rarely used, but safe)
     for field, name in [
         ("textrank_summary", "textrank"),
         ("lexrank_summary", "lexrank"),

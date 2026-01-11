@@ -7,17 +7,17 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
 PROCESSED_DIR = project_root / "data" / "processed"
-MKT_FILE = PROCESSED_DIR / "features_market.parquet"
+MARKET_FILE = PROCESSED_DIR / "features_market.parquet"
 OUTPUT_FILE = PROCESSED_DIR / "returns.parquet"
 
 def main():
     print("--- Step 5: Building Returns Table ---")
     
-    if not MKT_FILE.exists():
-        raise FileNotFoundError(f"Market features not found: {MKT_FILE}")
+    if not MARKET_FILE.exists():
+        raise FileNotFoundError(f"Market features not found: {MARKET_FILE}")
     
-    print(f"Loading: {MKT_FILE}")
-    df_mkt = pd.read_parquet(MKT_FILE)
+    print(f"Loading: {MARKET_FILE}")
+    df_mkt = pd.read_parquet(MARKET_FILE)
     
     print("Converting Log Returns -> Returns...")
     
