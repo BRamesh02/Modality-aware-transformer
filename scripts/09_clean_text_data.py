@@ -12,14 +12,11 @@ sys.path.append(str(project_root))
 from src.fnspid.text_functions import clean_str, norm_url, same_or_next_trading_day_nyse
 
 
-# ======================
-# CONFIG
-# ======================
 IN_DIR = project_root / "data" / "fnspid_raw"
 OUT_DIR = project_root / "data" / "fnspid_preprocessed"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-DELETE_RAW = True  # mettre True uniquement quand tout est validé
+DELETE_RAW = True  # Set to True only when everything is validated
 RAW_GLOB = "raw_*.parquet"
 
 BINS = [
@@ -44,10 +41,6 @@ FINAL_COLS = [
     "url",
 ]
 
-
-# ======================
-# Helpers
-# ======================
 def _safe_clean_series(s: pd.Series) -> pd.Series:
     return s.map(clean_str)
 
@@ -58,9 +51,6 @@ def _out_name(a: str, b: str) -> str:
     return f"preprocessed_{a[:4]}_{b[:4]}.parquet"
 
 
-# ======================
-# Main
-# ======================
 def main() -> None:
     raw_files = sorted(IN_DIR.glob(RAW_GLOB))
     if not raw_files:
@@ -69,13 +59,9 @@ def main() -> None:
     dfs = []
     total_in = 0
 
-    # ----------------------
-    # Read raw files
-    # ----------------------
     for fp in tqdm(raw_files, desc="Reading raw files", unit="file"):
         df = pd.read_parquet(fp)
 
-        # keep only required columns
         cols = [c for c in KEEP_COLS if c in df.columns]
         df = df[cols].copy()
         for c in KEEP_COLS:
@@ -84,15 +70,10 @@ def main() -> None:
 
         total_in += len(df)
 
-        # clean strings
         df["stock_symbol"] = _safe_clean_series(df["stock_symbol"])
         df["publisher"] = _safe_clean_series(df["publisher"])
         df["title"] = _safe_clean_series(df["title"])
-
-        # parse datetime
         df["dt_utc"] = pd.to_datetime(df["dt_utc"], utc=True, errors="coerce")
-
-        # normalize url
         df["url"] = df["url"].map(norm_url)
 
         dfs.append(df)
@@ -100,9 +81,6 @@ def main() -> None:
     print(f"Concatenating {len(dfs)} chunks...")
     all_df = pd.concat(dfs, ignore_index=True)
 
-    # ----------------------
-    # publication_date + effective_date
-    # ----------------------
     pub_day = all_df["dt_utc"].dt.tz_convert("UTC").dt.floor("D")
     all_df["publication_date"] = pub_day.dt.date
 
@@ -110,9 +88,6 @@ def main() -> None:
         lambda d: same_or_next_trading_day_nyse(d).isoformat() if d is not None else None
     )
 
-    # ----------------------
-    # Global dedup
-    # ----------------------
     before = len(all_df)
 
     all_df = all_df.drop_duplicates(
@@ -122,16 +97,10 @@ def main() -> None:
 
     dropped_dups = before - len(all_df)
 
-    # ----------------------
-    # Text fields
-    # ----------------------
     all_df["text"] = all_df["title"]
     all_df["text_source"] = "title"
     all_df["text_len"] = _compute_text_len_words(all_df["text"])
 
-    # ----------------------
-    # FINAL FILTER 
-    # ----------------------
     all_df = all_df[
         all_df["effective_date"].notna()
         & all_df["stock_symbol"].notna()
@@ -139,17 +108,12 @@ def main() -> None:
         & (all_df["text_len"] >= 3)
     ].copy()
 
-    # publication_date to ISO
     all_df["publication_date"] = all_df["publication_date"].map(
         lambda d: d.isoformat() if d is not None else None
     )
 
-    # keep only final columns
     all_df = all_df[FINAL_COLS].copy()
 
-    # ----------------------
-    # Write by bins
-    # ----------------------
     eff_dt = pd.to_datetime(all_df["effective_date"], errors="coerce").dt.floor("D")
 
     total_out = 0
@@ -164,7 +128,7 @@ def main() -> None:
 
         g = g.sort_values(
             by=["effective_date", "stock_symbol"],
-            kind="mergesort"   # tri stable (important)
+            kind="mergesort"
         )
 
         out_path = OUT_DIR / _out_name(a, b)
@@ -173,9 +137,6 @@ def main() -> None:
 
         print(f"Wrote {len(g):,} rows -> {out_path.name}")
 
-    # ----------------------
-    # Summary + cleanup
-    # ----------------------
     print("Done.")
     print(f"Input rows (raw total): {total_in:,}")
     print(f"Dropped duplicates:     {dropped_dups:,}")

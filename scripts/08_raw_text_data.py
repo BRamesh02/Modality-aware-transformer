@@ -7,7 +7,6 @@ from pathlib import Path
 
 from datasets import load_dataset
 
-# --- allow "src/" imports when running as a script ---
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
@@ -35,7 +34,6 @@ def main() -> None:
     ds = load_dataset(args.dataset, streaming=True)
     split = ds[args.split]
 
-    # Universal steps 
     split_raw = (
         split
         .map(tf.make_projector())       # keep useful columns

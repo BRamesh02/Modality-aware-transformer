@@ -7,7 +7,6 @@ import torch
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer, AutoModel, AutoModelForSequenceClassification
 
-
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
@@ -15,9 +14,6 @@ from src.fnspid.bert_features import (
     extract_bin_suffix,
     process_bin_to_stock_date_features,
 )
-
-
-# CONFIG
 
 IN_DIR = project_root / "data" / "fnspid_preprocessed"
 OUT_DIR = project_root / "data" / "fnspid_features_text_stock_date"
@@ -29,8 +25,6 @@ MAX_LEN = 64
 READ_COLS = ["effective_date", "stock_symbol", "text"]
 
 
-# DEVICE
-
 def get_device() -> str:
     if torch.cuda.is_available():
         return "cuda"
@@ -38,10 +32,8 @@ def get_device() -> str:
         return "mps"
     return "cpu"
 
-
 DEVICE = get_device()
 print("Device:", DEVICE)
-
 
 def main() -> None:
     files = sorted(IN_DIR.glob("preprocessed_*.parquet"))
