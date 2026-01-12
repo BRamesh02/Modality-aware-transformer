@@ -25,8 +25,6 @@ UNIVERSE_FILE = BASE_DIR / "data" / "processed" / "sp500_universe.parquet"
 
 def main():
     print("--- Step 11: Linking Tickers from FNSPID Databse to Permnos from CRSP Database ---")
-
-    print("--- FNSPID Ticker Linking Tool ---")
     
     df_map = load_mapping_table(MAPPING_FILE)
 
