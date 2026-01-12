@@ -36,6 +36,8 @@ DEVICE = get_device()
 print("Device:", DEVICE)
 
 def main() -> None:
+    print("--- Step 10: Processing Raw FNSPID Text Data ---")
+
     files = sorted(IN_DIR.glob("preprocessed_*.parquet"))
     if not files:
         raise FileNotFoundError(f"No preprocessed_*.parquet in {IN_DIR}")
@@ -60,7 +62,7 @@ def main() -> None:
             max_len=MAX_LEN,
         )
 
-    print("Done. Output in:", OUT_DIR)
+    print("SUCCESS: output in:", OUT_DIR)
 
 
 if __name__ == "__main__":

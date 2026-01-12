@@ -19,7 +19,7 @@ OUTPUT_FILE = project_root / "data" / "processed" / "features_market.parquet"
 START_DATE = "2007-01-01" 
 
 def main():
-    print("--- Step 2: Building Market Features (Price/Vol) ---")
+    print("--- Step 2: Building Market Features ---")
     
     if not UNIVERSE_FILE.exists():
         raise FileNotFoundError(f"Universe file missing: {UNIVERSE_FILE}")

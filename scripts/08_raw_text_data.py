@@ -26,6 +26,9 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    print("--- Step 8: Loading & Saving Raw FNSPID Text Data ---")
+
+    
     args = parse_args()
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -48,8 +51,9 @@ def main() -> None:
         desc="Storing FNSPID raw"
     )
 
-    print(f"\n Done. Total rows written: {total}")
-    print(f" Output directory: {out_dir.resolve()}")
+    print(f"\n Total rows written: {total}")
+    print(f"SUCCESS: Saved Raw FNSPID text data to {out_dir.resolve()}")
+
 
 
 if __name__ == "__main__":

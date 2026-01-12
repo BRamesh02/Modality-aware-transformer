@@ -27,7 +27,7 @@ OUTPUT_FILE = PROCESSED_DIR / "factors_returns.parquet"
 START_DATE = "2007-01-01"
 
 def main():
-    print("--- Step 6: Constructing Rank-Based Equity Factors (Simple Returns) ---")
+    print("--- Step 7: Constructing Rank-Based Equity Factors ---")
     
     print("Loading Data...")
     df_univ_wide = pd.read_parquet(UNIVERSE_FILE)

@@ -52,6 +52,8 @@ def _out_name(a: str, b: str) -> str:
 
 
 def main() -> None:
+    print("--- Step 9: Cleaning Raw FNSPID Text Data ---")
+
     raw_files = sorted(IN_DIR.glob(RAW_GLOB))
     if not raw_files:
         raise FileNotFoundError(f"No files matching {IN_DIR / RAW_GLOB}")

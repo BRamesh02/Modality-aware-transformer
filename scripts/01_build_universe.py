@@ -16,7 +16,7 @@ OUTPUT_DIR = project_root / "data" / "processed"
 OUTPUT_FILE = OUTPUT_DIR / "sp500_universe.parquet"
 
 def main():
-    print(f"--- Starting Universe Construction ---")
+    print("--- Step 1: Starting Universe Construction ---")
     
     client = WRDSClient()
     

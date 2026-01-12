@@ -25,7 +25,6 @@ def main():
         columns=["date", "permno", "mkt_log_ret", "mkt_volatility"]
     )
     
-    print("Computing Volatility-Scaled Returns...")
     df_target = compute_vol_scaled_returns(df_mkt, horizon=PREDICTION_HORIZON)
     
     print("\nTarget Statistics:")

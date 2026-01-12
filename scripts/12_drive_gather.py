@@ -6,7 +6,7 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
-from src.utils.drive_downloads import download_drive_files
+from src.fnspid.drive_downloads import download_drive_files
 
 IDS_PATH = project_root / "config" / "drive_ids.json"
 DATA_DIR = project_root / "data"
