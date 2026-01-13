@@ -5,7 +5,7 @@ from src.models.decoders.canonical_decoder import CanonicalDecoder
 from src.models.layers.positional_encoding import PositionalEncoding
 
 
-class TransformerEDBaselineAR(nn.Module):
+class CanonicalTransformer(nn.Module):
     """
     Baseline Transformer encoder-decoder "classique" autoregressif.
     - Encoder: CanonicalEncoder -> memory [B,T,D]

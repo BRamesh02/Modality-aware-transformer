@@ -6,7 +6,7 @@ from src.models.decoders.mat_decoder import MATDecoder
 from src.models.layers.positional_encoding import PositionalEncoding
 
 
-class MATED(nn.Module):
+class MAT(nn.Module):
     """
     MAT encoder-decoder autoregressif (sans LearnedQuery).
     - Encoder: mem_num, mem_text
