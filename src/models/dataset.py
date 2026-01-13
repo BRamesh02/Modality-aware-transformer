@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 
 class FinancialDataset(Dataset):
-    def __init__(self, df: pd.DataFrame, window_size: int = 60, min_date=None, max_date=None):
+    def __init__(self, df: pd.DataFrame, window_size: int = 60, min_date=None, max_date=None, forecast_horizon=1):
         """
         Args:
             df: DataFrame containing Features + Context Buffer (past data).
@@ -14,6 +14,7 @@ class FinancialDataset(Dataset):
             max_date: (str) The latest date allowed for a TARGET.
         """
         self.window_size = window_size
+        self.H = forecast_horizon
         
         self.df = df.sort_values(["permno", "date"]).reset_index(drop=True)
 
@@ -37,8 +38,17 @@ class FinancialDataset(Dataset):
         else:
             emb_values = np.zeros((len(self.df), 768), dtype=np.float32)
             
-        scalar_values = self.df[self.text_scalar_cols].values.astype(np.float32)
-        self.data_text = torch.tensor(np.concatenate([emb_values, scalar_values], axis=1))
+        # scalar_values = self.df[self.text_scalar_cols].values.astype(np.float32)
+        # self.data_text = torch.tensor(np.concatenate([emb_values, scalar_values], axis=1))
+        # self.data_target = torch.tensor(self.df["target"].values.astype(np.float32))
+
+        # Embeddings: [N, 768]
+        self.data_emb = torch.tensor(emb_values)  # already float32
+
+        # Sentiment scalars: [N, n_sent]
+        sent_values = self.df[self.text_scalar_cols].values.astype(np.float32)
+        self.data_sent = torch.tensor(sent_values)
+
         self.data_target = torch.tensor(self.df["target"].values.astype(np.float32))
 
         dates = pd.to_datetime(self.df['date'])
@@ -54,14 +64,16 @@ class FinancialDataset(Dataset):
         
         for start, end in zip(start_points, end_points):
             n_rows = end - start
-            if n_rows > window_size:
+            if n_rows > window_size+self.H-1:
                 # Potential start indices
                 # Input Window: [i : i+60]
                 # Target Index: i+60-1 (The last day of the window)
-                valid_starts = range(start, end - window_size + 1)
+                # valid_starts = range(start, end - window_size + 1)
+                valid_starts = range(start+1, end - (window_size+self.H -1)+1)
                 
                 for i in valid_starts:
-                    target_date = dates[i + window_size - 1]
+                    #target_date = dates[i + window_size - 1]
+                    target_date = dates[i + window_size + self.H - 2]
                     if min_ts <= target_date <= max_ts:
                         self.indices.append(i)
 
@@ -72,12 +84,35 @@ class FinancialDataset(Dataset):
 
     def __getitem__(self, idx):
         i = self.indices[idx]
+        T = self.window_size
+        H = self.H
         
-        x_num = self.data_num[i : i + self.window_size]
-        x_text = self.data_text[i : i + self.window_size]
-        y = self.data_target[i + self.window_size - 1]
+        x_num = self.data_num[i : i + T]    # [T, F]
+        # x_text = self.data_text[i : i + self.window_size]
+        x_sent = self.data_sent[i : i + T]  # [T, 5]
+        x_emb  = self.data_emb[i : i + T]   # [T, 768]
+        # y = self.data_target[i + self.window_size - 1]
+
+        # Time index
+        t = i + T - 1                              # dernier jour connu dans la fenêtre
+        # y_future = ce que tu veux prédire (H pas dans le futur)
+        y_future = self.data_target[t : t + H]   # [H] = y_{t+1}..y_{t+H}
+
+        # y_hist = ce que tu donnes au decoder (teacher forcing)
+        # [y_t, y_{t+1}, ..., y_{t+H-1}] (shift d'un pas)
+        y_hist = self.data_target[t - 1 : t - 1 + H]    # [H] = r_t..r_{t+H-1}
+
         
-        return {"x_num": x_num, "x_text": x_text, "y": y}
+        # return {"x_num": x_num, "x_text": x_text, "y": y}
+        # return {"x_num": x_num, "x_sent": x_sent, "x_emb": x_emb, "y": y}
+        return {
+            "x_num": x_num,
+            "x_sent": x_sent,
+            "x_emb": x_emb,
+            "y_hist": y_hist,      # input  decoder
+            "y_future": y_future,  # target for loss
+        }
+
 
 def prepare_scaled_fold(df_main:pd.DataFrame, num_cols:list[str], split, buffer_days=90):
     """
