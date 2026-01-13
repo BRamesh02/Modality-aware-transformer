@@ -6,7 +6,7 @@ import math
 from src.models.layers.masks import causal_mask
 
 
-class ClassicDecoderLayer(nn.Module):
+class DecoderLayer(nn.Module):
     """
     Decoder Transformer classique:
       1) Masked self-attention sur tgt
@@ -63,10 +63,10 @@ class ClassicDecoderLayer(nn.Module):
         return tgt
 
 
-class ClassicDecoder(nn.Module):
+class CanonicalDecoder(nn.Module):
     def __init__(self, d_model=128, nhead=4, num_layers=2, dropout=0.2):
         super().__init__()
-        self.layers = nn.ModuleList([ClassicDecoderLayer(d_model, nhead, dropout) for _ in range(num_layers)])
+        self.layers = nn.ModuleList([DecoderLayer(d_model, nhead, dropout) for _ in range(num_layers)])
 
     def forward(self, tgt, memory, tgt_key_padding_mask=None, mem_key_padding_mask=None):
         for layer in self.layers:

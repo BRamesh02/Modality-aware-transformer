@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from src.models.encoders.canonical_encoder import CanonicalEncoder
-from src.models.decoders.canonical_decoder import ClassicDecoder
+from src.models.decoders.canonical_decoder import CanonicalDecoder
 from src.models.layers.positional_encoding import PositionalEncoding
 
 
@@ -9,7 +9,7 @@ class TransformerEDBaselineAR(nn.Module):
     """
     Baseline Transformer encoder-decoder "classique" autoregressif.
     - Encoder: CanonicalEncoder -> memory [B,T,D]
-    - Decoder: ClassicDecoder avec self-attn masquée + cross-attn
+    - Decoder: CanonicalDecoder avec self-attn masquée + cross-attn
     - Entrée decoder (train): [BOS, y_t, ..., y_{t+H-1}] (H+1 tokens)
     - Sortie: prédictions y_{t+1}..y_{t+H} via états 1..H
     """
@@ -37,7 +37,7 @@ class TransformerEDBaselineAR(nn.Module):
         # PE pour le tgt
         self.tgt_pos = PositionalEncoding(d_model, dropout)
 
-        self.decoder = ClassicDecoder(d_model, nhead, dec_layers, dropout)
+        self.decoder = CanonicalDecoder(d_model, nhead, dec_layers, dropout)
 
         self.head = nn.Sequential(
             nn.Linear(d_model, 64),
