@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 import glob
 from typing import List, Dict, Optional
-from src.data.wrds_client import WRDSClient
+from src.numerical_data.wrds_client import WRDSClient
 
 # --- Constants ---
 TICKER_CLEANING_MAP = {

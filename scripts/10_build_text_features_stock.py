@@ -15,8 +15,8 @@ from src.fnspid.bert_features import (
     process_bin_to_stock_date_features,
 )
 
-IN_DIR = project_root / "data" / "fnspid_preprocessed"
-OUT_DIR = project_root / "data" / "fnspid_features_text_stock_date"
+IN_DIR = project_root / "data" / "preprocessed" / "fnspid"
+OUT_DIR = project_root / "data" / "processed" / "fnspid"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 MODEL_NAME = "ProsusAI/finbert"
@@ -37,10 +37,15 @@ print("Device:", DEVICE)
 
 def main() -> None:
     print("--- Step 10: Processing Raw FNSPID Text Data ---")
+    print(f"Reading from: {IN_DIR}")
+    print(f"Writing to:   {OUT_DIR}")
+
+    if not IN_DIR.exists():
+        raise FileNotFoundError(f"Input directory {IN_DIR} does not exist.")
 
     files = sorted(IN_DIR.glob("preprocessed_*.parquet"))
     if not files:
-        raise FileNotFoundError(f"No preprocessed_*.parquet in {IN_DIR}")
+        raise FileNotFoundError(f"No preprocessed_*.parquet files found in {IN_DIR}")
 
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     clf_model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME).to(DEVICE)
@@ -48,7 +53,7 @@ def main() -> None:
 
     for f in tqdm(files, desc="Bins → stock×date features", unit="file"):
         suffix = extract_bin_suffix(f.name)
-        out_file = OUT_DIR / f"text_features_stock_date_{suffix}.parquet"
+        out_file = OUT_DIR / f"processed_{suffix}.parquet"
 
         process_bin_to_stock_date_features(
             infile=f,

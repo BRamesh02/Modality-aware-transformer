@@ -1,4 +1,3 @@
-# src/training/train_transformer.py
 import os
 import argparse
 import torch
