@@ -15,8 +15,8 @@ from src.numerical_data.features_ratios import (
     format_ratio_features
 )
 
-MARKET_FILE = project_root / "data" / "processed" / "features_market.parquet"
-OUTPUT_FILE = project_root / "data" / "processed" / "features_ratios.parquet"
+MARKET_FILE = project_root / "data" / "processed" / "numerical_data" / "features_market.parquet"
+OUTPUT_FILE = project_root / "data" / "processed" / "numerical_data" / "features_ratios.parquet"
 START_DATE = "2007-01-01"
 
 def main():

@@ -17,7 +17,7 @@ from src.numerical_data.factors import (
     compute_momentum
 )
 
-PROCESSED_DIR = project_root / "data" / "processed"
+PROCESSED_DIR = project_root / "data" / "processed" / "numerical_data"
 UNIVERSE_FILE = PROCESSED_DIR / "sp500_universe.parquet" 
 MARKET_FILE = PROCESSED_DIR / "features_market.parquet"
 RATIO_FILE = PROCESSED_DIR / "features_ratios.parquet"

@@ -14,8 +14,8 @@ from src.numerical_data.features_macro import (
     merge_and_format_macro
 )
 
-MARKET_FILE = project_root / "data" / "processed" / "features_market.parquet"
-OUTPUT_FILE = project_root / "data" / "processed" / "features_macro.parquet"
+MARKET_FILE = project_root / "data" / "processed" / "numerical_data" / "features_market.parquet"
+OUTPUT_FILE = project_root / "data" / "processed" / "numerical_data" / "features_macro.parquet"
 START_DATE = "2007-01-01"
 
 def main():

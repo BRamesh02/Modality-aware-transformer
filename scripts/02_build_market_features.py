@@ -14,8 +14,8 @@ from src.numerical_data.features_market import (
     format_market_features
 )
 
-UNIVERSE_FILE = project_root / "data" / "processed" / "sp500_universe.parquet"
-OUTPUT_FILE = project_root / "data" / "processed" / "features_market.parquet"
+UNIVERSE_FILE = project_root / "data" / "processed" / "numerical_data" / "sp500_universe.parquet"
+OUTPUT_FILE = project_root / "data" / "processed" / "numerical_data" / "features_market.parquet"
 START_DATE = "2007-01-01" 
 
 def main():
