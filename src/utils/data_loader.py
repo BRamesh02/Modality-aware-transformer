@@ -16,15 +16,18 @@ def load_and_merge_data(data_dir: Path, start_date="2010-01-01", end_date="2023-
     """
     Loads Target, Market, Ratios, Macro, and Text data.
     Merges them into a Point-in-Time dataframe and handles missing embeddings.
+    
+    Assumes data_dir points to the root 'data' folder.
     """
     print(f"Reading data from: {data_dir}")
     
     print("Loading datasets...")
-    df_target = load_parquet(data_dir / "processed/target.parquet").astype({"target": "float32"})
-    df_market = load_parquet(data_dir / "processed/features_market.parquet")
-    df_ratios = load_parquet(data_dir / "processed/features_ratios.parquet")
-    df_macro  = load_parquet(data_dir / "processed/features_macro.parquet")
-    df_text   = load_parquet(data_dir / "linked_text_data/linked_text_data.parquet")
+    
+    df_target = load_parquet(data_dir / "processed/numerical_data/target.parquet").astype({"target": "float32"})
+    df_market = load_parquet(data_dir / "processed/numerical_data/features_market.parquet")
+    df_ratios = load_parquet(data_dir / "processed/numerical_data/features_ratios.parquet")
+    df_macro  = load_parquet(data_dir / "processed/numerical_data/features_macro.parquet")
+    df_text   = load_parquet(data_dir / "processed/fnspid/process_and_linked_text_features.parquet")
 
     print("\n--- Merging Data ---")
     df_num = df_target.copy()
