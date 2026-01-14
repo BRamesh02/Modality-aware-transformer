@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from src.models.encoders.mat_encoder_plain import MATEncoderPlain
+from src.models.encoders.mat_encoder import MATEncoder
 from src.models.encoders.mat_encoder_weighted import MATEncoderWeighted
 from src.models.decoders.mat_decoder import MATDecoder
 from src.models.layers.positional_encoding import PositionalEncoding
@@ -24,7 +24,7 @@ class MAT(nn.Module):
         dec_layers: int = 2,
         dropout: float = 0.2,
         forecast_horizon: int = 1,
-        encoder_type="weighted"
+        encoder_type=None,
     ):
         super().__init__()
         self.H = forecast_horizon
@@ -34,12 +34,11 @@ class MAT(nn.Module):
             self.encoder = MATEncoderWeighted(
                 num_input_dim, n_sent, d_model, nhead, enc_layers, dropout
             )
-        elif encoder_type == "plain":
-            self.encoder = MATEncoderPlain(
+        else:
+            self.encoder = MATEncoder(
                 num_input_dim, n_sent, d_model, nhead, enc_layers, dropout
             )
-        else:
-            raise ValueError(f"Unknown encoder_type: {encoder_type}")
+ 
 
         self.decoder = MATDecoder(d_model, nhead, dec_layers, dropout)
 
@@ -120,7 +119,6 @@ class MAT(nn.Module):
 
         prev = y0  # [B]
 
-        # on construit tgt pas à pas
         tgt_tokens = torch.cat([self.bos.expand(B, 1, -1),
                         self.y_in_proj(y0.view(B,1,1))], dim=1)  # [B,2,D]
         preds = []
