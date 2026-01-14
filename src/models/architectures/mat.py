@@ -25,18 +25,20 @@ class MAT(nn.Module):
         dropout: float = 0.2,
         forecast_horizon: int = 1,
         encoder_type=None,
+        use_emb: bool = False,
     ):
         super().__init__()
+        self.use_emb = use_emb
         self.H = forecast_horizon
         self.d_model = d_model
 
         if encoder_type == "weighted":
             self.encoder = MATEncoderWeighted(
-                num_input_dim, n_sent, d_model, nhead, enc_layers, dropout
+                num_input_dim, n_sent, d_model, nhead, enc_layers, dropout,use_emb=self.use_emb
             )
         else:
             self.encoder = MATEncoder(
-                num_input_dim, n_sent, d_model, nhead, enc_layers, dropout
+                num_input_dim, n_sent, d_model, nhead, enc_layers, dropout,use_emb=self.use_emb
             )
  
 
@@ -68,8 +70,8 @@ class MAT(nn.Module):
         self,
         x_num: torch.Tensor,
         x_sent: torch.Tensor,
-        x_emb: torch.Tensor,
-        y_hist: torch.Tensor,
+        x_emb: torch.Tensor = None,
+        y_hist: torch.Tensor = None,
     ) -> torch.Tensor:
         """
         Teacher forcing forward.
@@ -85,7 +87,10 @@ class MAT(nn.Module):
         B = x_num.size(0)
         H = y_hist.size(1)
         assert H == self.H, f"y_hist horizon {H} != forecast_horizon {self.H}"
-
+        
+        # securite 
+        if self.use_emb and x_emb is None:
+            raise ValueError("MAT(use_emb=True) requires x_emb, got None.")
         mem_num, mem_text = self.encoder(x_num, x_sent, x_emb)  # [B,T,D] each
 
         # Build tgt inputs: [B,H,D] = [BOS, embed(y_hist[:,:-1])] for strict 1-step shift
@@ -103,8 +108,8 @@ class MAT(nn.Module):
         self,
         x_num: torch.Tensor,
         x_sent: torch.Tensor,
-        x_emb: torch.Tensor,
-        y0: torch.Tensor,
+        x_emb: torch.Tensor = None,
+        y0: torch.Tensor = None,
     ) -> torch.Tensor:
         """
         Inference autoregressive.
@@ -115,6 +120,8 @@ class MAT(nn.Module):
             y_hat: [B,H]
         """
         B = x_num.size(0)
+        if self.use_emb and x_emb is None:
+            raise ValueError("MAT(use_emb=True) requires x_emb, got None.")
         mem_num, mem_text = self.encoder(x_num, x_sent, x_emb)
 
         prev = y0  # [B]

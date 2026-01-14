@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 class FinancialDataset(Dataset):
-    def __init__(self, df: pd.DataFrame, window_size: int = 60, min_date=None, max_date=None, forecast_horizon=1):
+    def __init__(self, df: pd.DataFrame, window_size: int = 60, min_date=None, max_date=None, forecast_horizon=1, use_emb: bool = True):
         """
         Args:
             df: DataFrame containing Features + Context Buffer (past data).
@@ -14,6 +14,7 @@ class FinancialDataset(Dataset):
         """
         self.window_size = window_size
         self.H = forecast_horizon
+        self.use_emb = use_emb
         
         self.df = df.sort_values(["permno", "date"]).reset_index(drop=True)
 
@@ -26,17 +27,25 @@ class FinancialDataset(Dataset):
         self.text_scalar_cols = ["sent_score_mean", "sent_pos_mean", "sent_neg_mean", "sent_score_std", "log_n_news"]
         
         print(f"Numerical Features ({len(self.num_cols)}): {self.num_cols}")
-        print(f"Text Features bar Embedding Vector ({len(self.text_scalar_cols)}): {self.text_scalar_cols}")
+        print(f"Text scalar features ({len(self.text_scalar_cols)}): {self.text_scalar_cols}")
+        print(f"Use embeddings: {self.use_emb}")
 
         print("Converting to PyTorch Tensors...")
 
         self.data_num = torch.tensor(self.df[self.num_cols].values.astype(np.float32))
         
-        if "emb_mean" in self.df.columns:
-            emb_values = np.stack(self.df["emb_mean"].values).astype(np.float32)
-        else:
-            emb_values = np.zeros((len(self.df), 768), dtype=np.float32)
-            
+        # if "emb_mean" in self.df.columns:
+        #     emb_values = np.stack(self.df["emb_mean"].values).astype(np.float32)
+        # else:
+        #     emb_values = np.zeros((len(self.df), 768), dtype=np.float32)
+        self.data_emb = None
+        if self.use_emb:
+            if "emb_mean" in self.df.columns:
+                emb_values = np.stack(self.df["emb_mean"].values).astype(np.float32)
+            else:
+                emb_values = np.zeros((len(self.df), 768), dtype=np.float32)
+        # Embeddings: [N, 768]
+        self.data_emb = torch.tensor(emb_values)  # float32
         # scalar_values = self.df[self.text_scalar_cols].values.astype(np.float32)
         # self.data_text = torch.tensor(np.concatenate([emb_values, scalar_values], axis=1))
         # self.data_target = torch.tensor(self.df["target"].values.astype(np.float32))
@@ -89,8 +98,11 @@ class FinancialDataset(Dataset):
         x_num = self.data_num[i : i + T]    # [T, F]
         # x_text = self.data_text[i : i + self.window_size]
         x_sent = self.data_sent[i : i + T]  # [T, 5]
-        x_emb  = self.data_emb[i : i + T]   # [T, 768]
+        # x_emb  = self.data_emb[i : i + T]   # [T, 768]
         # y = self.data_target[i + self.window_size - 1]
+        x_emb = None
+        if self.data_emb is not None:
+            x_emb = self.data_emb[i : i + T]  # [T,768]
 
         # Time index
         t = i + T - 1                              # dernier jour connu dans la fenêtre

@@ -96,12 +96,20 @@ class MATEncoderWeighted(nn.Module):
         dropout: float = 0.2,
         sent_dim: int = 32,
         emb_dim: int = 96,
+        use_emb: bool = True,
     ):
         super().__init__()
+        
+        # choice to use embeddings 
+        self.use_emb = use_emb
 
         # 1. Feature Attention (Returns weights now)
         self.num_feat_attn = FeatureAttention(num_input_dim)
-        self.text_feat_attn = FeatureAttention(sent_dim+emb_dim)
+        # self.text_feat_attn = FeatureAttention(sent_dim+emb_dim)
+        text_feat_dim = sent_dim + (emb_dim if self.use_emb else 0)
+        self.text_feat_attn = FeatureAttention(text_feat_dim)
+
+
 
         # 2. Weight Projectors (NEW)
         # We need to map the Feature Weights (dim 20 or 773) to d_model (128)
@@ -111,7 +119,7 @@ class MATEncoderWeighted(nn.Module):
             nn.Sigmoid(),  # Gating (0-1)
         )
         self.text_weight_proj = nn.Sequential(
-             nn.Linear(sent_dim+emb_dim, d_model), nn.Sigmoid()
+             nn.Linear(text_feat_dim, d_model), nn.Sigmoid()
         )
 
         # 3. Standard Projections (Input -> d_model)
@@ -136,14 +144,31 @@ class MATEncoderWeighted(nn.Module):
             nn.GELU(),
             nn.Dropout(dropout),
         )
-        self.emb_proj = nn.Sequential(
+        # self.emb_proj = nn.Sequential(
+        #     nn.Linear(768, emb_dim),
+        #     nn.LayerNorm(emb_dim),
+        #     nn.GELU(),
+        #     nn.Dropout(dropout),
+        # )
+        # self.text_proj = nn.Sequential(
+        #     nn.Linear(sent_dim + emb_dim, d_model),
+        #     nn.LayerNorm(d_model),
+        #     nn.GELU(),
+        #     nn.Dropout(dropout),
+        # )
+
+        if self.use_emb:
+            self.emb_proj = nn.Sequential(
             nn.Linear(768, emb_dim),
             nn.LayerNorm(emb_dim),
             nn.GELU(),
             nn.Dropout(dropout),
         )
+        else:
+            self.emb_proj = None
+
         self.text_proj = nn.Sequential(
-            nn.Linear(sent_dim + emb_dim, d_model),
+            nn.Linear(text_feat_dim, d_model),
             nn.LayerNorm(d_model),
             nn.GELU(),
             nn.Dropout(dropout),
@@ -158,7 +183,7 @@ class MATEncoderWeighted(nn.Module):
             ]
         )
 
-    def forward(self, x_num, x_sent, x_emb):
+    def forward(self, x_num, x_sent, x_emb=None):
         """
         x_num : [B,T,F]
         x_sent: [B,T,n_sent]
@@ -170,9 +195,19 @@ class MATEncoderWeighted(nn.Module):
         # w_text: [Batch, 60, 773]
         
         #  Build raw text features (128) 
-        t_sent = self.sent_proj(x_sent)             # [B,T,32]
-        t_emb  = self.emb_proj(x_emb)               # [B,T,96]
-        x_text = torch.cat([t_sent, t_emb], dim=-1) # [B,T,128]
+        # t_sent = self.sent_proj(x_sent)             # [B,T,32]
+        # t_emb  = self.emb_proj(x_emb)               # [B,T,96]
+        # x_text = torch.cat([t_sent, t_emb], dim=-1) # [B,T,128]
+
+        t_sent = self.sent_proj(x_sent)  # [B,T,sent_dim]
+
+        if self.use_emb:
+            if x_emb is None:
+                raise ValueError("MATEncoderWeighted(use_emb=True) requires x_emb, got None.")
+            t_emb = self.emb_proj(x_emb)  # [B,T,emb_dim]
+            x_text = torch.cat([t_sent, t_emb], dim=-1)  # [B,T,text_feat_dim]
+        else:
+            x_text = t_sent  # [B,T,text_feat_dim] where text_feat_dim = sent_dim
 
         # FeatureAttention (Softmax) + keep weights                       
         x_num, w_num = self.num_feat_attn(x_num)        # w_num : [B,T,F]

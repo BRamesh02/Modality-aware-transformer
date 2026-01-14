@@ -15,6 +15,7 @@ class CanonicalEncoder(nn.Module):
         dropout: float = 0.2,
         sent_dim: int = 32,
         emb_dim: int = 96,
+        use_emb: bool = True,
     ):
         """
         The Baseline: A Standard Transformer with Early Fusion.
@@ -25,6 +26,8 @@ class CanonicalEncoder(nn.Module):
         # We project both inputs to d_model/2 so they sum to d_model when concatenated.
         # This gives equal bandwidth to both modalities, just like MAT.
         half_dim = d_model // 2
+
+        self.use_emb = use_emb
 
         self.num_proj = nn.Sequential(
             nn.Linear(num_input_dim, half_dim),
@@ -48,15 +51,20 @@ class CanonicalEncoder(nn.Module):
             nn.Dropout(dropout),
         )
 
-        self.emb_proj = nn.Sequential(
-            nn.Linear(768, emb_dim),
-            nn.LayerNorm(emb_dim),
-            nn.GELU(),
-            nn.Dropout(dropout),
-        )
+        if self.use_emb:
+            self.emb_proj = nn.Sequential(
+                nn.Linear(768, emb_dim),
+                nn.LayerNorm(emb_dim),
+                nn.GELU(),
+                nn.Dropout(dropout),
+            )
+            fuse_in = sent_dim + emb_dim
+        else:
+            self.emb_proj = None
+            fuse_in = sent_dim
 
         self.text_fuse = nn.Sequential(
-            nn.Linear(sent_dim + emb_dim, half_dim),
+            nn.Linear(fuse_in, half_dim),
             nn.LayerNorm(half_dim),
             nn.GELU(),
             nn.Dropout(dropout),
@@ -79,7 +87,7 @@ class CanonicalEncoder(nn.Module):
         )
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
 
-    def forward(self, x_num, x_sent, x_emb):
+    def forward(self, x_num, x_sent, x_emb=None):
         """
         Args:
             x_num:  [Batch, T, num_input_dim]
@@ -92,8 +100,19 @@ class CanonicalEncoder(nn.Module):
         x_n = self.num_proj(x_num)  # [Batch, 60, 64]
         # x_t = self.text_proj(x_text)  # [Batch, 60, 64]
         t_sent = self.sent_proj(x_sent)              # [B,T,32]
-        t_emb  = self.emb_proj(x_emb)                # [B,T,96]
-        x_t    = self.text_fuse(torch.cat([t_sent, t_emb], dim=-1))  # [B,60,64]
+        # t_emb  = self.emb_proj(x_emb)                # [B,T,96]
+        # x_t    = self.text_fuse(torch.cat([t_sent, t_emb], dim=-1))  # [B,60,64]
+
+        if self.use_emb:
+            if x_emb is None:
+                raise ValueError("CanonicalEncoder(use_emb=True) requires x_emb, got None.")
+            t_emb = self.emb_proj(x_emb)  # [B,T,emb_dim]
+            t_in = torch.cat([t_sent, t_emb], dim=-1)
+        else:
+            # embeddings disabled: sentiment scalars only
+            t_in = t_sent
+
+        x_t = self.text_fuse(t_in)  # [B,T,half_dim]
 
         # 2. Early Concatenation (The key difference from MAT)
         # We fuse them immediately. The transformer now sees one vector of size 128.

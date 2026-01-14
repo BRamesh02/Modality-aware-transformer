@@ -16,12 +16,14 @@ class CanonicalTransformer(nn.Module):
     def __init__(self, num_input_dim: int, n_sent: int,
                  d_model: int = 128, nhead: int = 4,
                  enc_layers: int = 2, dec_layers: int = 2,
-                 dropout: float = 0.2, forecast_horizon: int = 1):
+                 dropout: float = 0.2, forecast_horizon: int = 1, use_emb: bool = False):
         super().__init__()
         self.H = forecast_horizon
         self.d_model = d_model
-
-        self.encoder = CanonicalEncoder(num_input_dim, n_sent, d_model, nhead, enc_layers, dropout)
+        
+        #utilisation or not embeddings
+        self.use_emb = use_emb
+        self.encoder = CanonicalEncoder(num_input_dim, n_sent, d_model, nhead, enc_layers, dropout , use_emb=self.use_emb,)
 
         # embedding du target scalaire
         self.y_in_proj = nn.Sequential(
@@ -46,7 +48,7 @@ class CanonicalTransformer(nn.Module):
             nn.Linear(64, 1),
         )
 
-    def forward(self, x_num, x_sent, x_emb, y_hist):
+    def forward(self, x_num, x_sent, x_emb=None, y_hist=None):
         """
         Train (teacher forcing)
         y_hist: [B,H] = [y_t, y_{t+1}, ..., y_{t+H-1}]
@@ -56,6 +58,9 @@ class CanonicalTransformer(nn.Module):
         H = y_hist.size(1)
         assert H == self.H
 
+        if self.use_emb and x_emb is None:
+            raise ValueError("CanonicalTransformer(use_emb=True) requires x_emb, got None.")
+        
         memory = self.encoder(x_num, x_sent, x_emb)  # [B,T,D]
 
         # tgt_tokens = [BOS, y_t..y_{t+H-1}] => longueur H+1
@@ -70,13 +75,15 @@ class CanonicalTransformer(nn.Module):
         return y_hat
 
     @torch.no_grad()
-    def predict(self, x_num, x_sent, x_emb, y0):
+    def predict(self, x_num, x_sent, x_emb=None, y0=None):
         """
         Inference AR:
         y0: [B] = y_t (dernière valeur connue)
         Retour: [B,H] = y_{t+1}..y_{t+H}
         """
         B = x_num.size(0)
+        if self.use_emb and x_emb is None:
+            raise ValueError("CanonicalTransformer(use_emb=True) requires x_emb, got None.")
         memory = self.encoder(x_num, x_sent, x_emb)
 
         # on démarre avec [BOS, y_t]
