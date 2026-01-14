@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import math
 from src.models.layers.masks import causal_mask
 
 
@@ -10,7 +9,6 @@ class DecoderLayer(nn.Module):
       1) Masked self-attention sur tgt
       2) Cross-attention tgt -> memory (encoder)
       3) FFN
-    Post-norm (comme ton MAT)
     """
     def __init__(self, d_model: int, nhead: int, dropout: float):
         super().__init__()
@@ -35,19 +33,23 @@ class DecoderLayer(nn.Module):
         attn_mask = causal_mask(L, device=tgt.device)
 
         # 1) masked self-attn
+
+        # en pre norm
+        z = self.norm0(tgt)
         x, _ = self.self_attn(
-            query=tgt, key=tgt, value=tgt,
+            query=z, key=z, value=z,
             attn_mask=attn_mask,
             key_padding_mask=tgt_key_padding_mask,
             need_weights=False,
         )
         tgt = tgt + self.drop(x)
-        # tgt = self.norm0(tgt + self.drop(x)) a mettre si on veut se mettre en post norm et s'aligner avec MAT
-        # penser à le faire avec encoder aussi dans ce cas norm_first=False
+        # tgt = self.norm0(tgt + self.drop(x)) a mettre si on veut se mettre en post norm 
+        # et s'aligner avec MAT penser à le faire avec encoder aussi dans ce cas norm_first=False
 
         # 2) cross-attn
+        z = self.norm1(tgt)
         x, _ = self.cross_attn(
-            query=tgt, key=memory, value=memory,
+            query=z, key=memory, value=memory,
             key_padding_mask=mem_key_padding_mask,
             need_weights=False,
         )
@@ -55,7 +57,8 @@ class DecoderLayer(nn.Module):
         # tgt = self.norm1(tgt + self.drop(x))
 
         # 3) FFN
-        x = self.ff(tgt)
+        z = self.norm2(tgt)
+        x = self.ff(z)
         tgt = tgt + self.drop(x)
         # tgt = self.norm2(tgt + self.drop(x))
         return tgt
@@ -72,4 +75,3 @@ class CanonicalDecoder(nn.Module):
                         tgt_key_padding_mask=tgt_key_padding_mask,
                         mem_key_padding_mask=mem_key_padding_mask)
         return tgt
-    
