@@ -18,6 +18,7 @@ env/
 venv/
 ENV/
 .python-version
+config/drive_ids.json
 
 # --- Testing & Code Quality ---
 htmlcov/
