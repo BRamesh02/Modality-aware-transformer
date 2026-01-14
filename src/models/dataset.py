@@ -38,6 +38,8 @@ class FinancialDataset(Dataset):
         #     emb_values = np.stack(self.df["emb_mean"].values).astype(np.float32)
         # else:
         #     emb_values = np.zeros((len(self.df), 768), dtype=np.float32)
+        #  a fallback tensor so DataLoader can collate
+        self.zero_emb = torch.zeros((window_size, 768), dtype=torch.float32)
         self.data_emb = None
         if self.use_emb:
             if "emb_mean" in self.df.columns:
@@ -45,13 +47,13 @@ class FinancialDataset(Dataset):
             else:
                 emb_values = np.zeros((len(self.df), 768), dtype=np.float32)
         # Embeddings: [N, 768]
-        self.data_emb = torch.tensor(emb_values)  # float32
+            self.data_emb = torch.tensor(emb_values)  # float32
         # scalar_values = self.df[self.text_scalar_cols].values.astype(np.float32)
         # self.data_text = torch.tensor(np.concatenate([emb_values, scalar_values], axis=1))
         # self.data_target = torch.tensor(self.df["target"].values.astype(np.float32))
 
         # Embeddings: [N, 768]
-        self.data_emb = torch.tensor(emb_values)  # already float32
+        #self.data_emb = torch.tensor(emb_values)  # already float32
 
         # Sentiment scalars: [N, n_sent]
         sent_values = self.df[self.text_scalar_cols].values.astype(np.float32)
@@ -103,6 +105,8 @@ class FinancialDataset(Dataset):
         x_emb = None
         if self.data_emb is not None:
             x_emb = self.data_emb[i : i + T]  # [T,768]
+        else:
+            x_emb = self.zero_emb              # [T,768] zeros
 
         # Time index
         t = i + T - 1                              # dernier jour connu dans la fenêtre
