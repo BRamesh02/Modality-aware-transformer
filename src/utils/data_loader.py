@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import StandardScaler
 from pathlib import Path
 
 def load_parquet(file_path):
@@ -88,3 +89,41 @@ def load_and_merge_data(data_dir: Path, start_date="2010-01-01", end_date="2023-
 
     print("Done! Final Data Shape:", df_main.shape)
     return df_main
+
+def prepare_scaled_fold(df_main:pd.DataFrame, num_cols:list[str], split, buffer_days=90):
+    """
+    Handles the buffering and scaling for a single Walk-Forward fold.
+    
+    Logic:
+    1. Extract 'Warm' DataFrames (Official Period + 90 days prior context).
+    2. Fit Scaler on the FULL 'Train Warm' set (Buffer + Official Train).
+    3. Transform Val/Test using that same scaler.
+    """
+    train_start, train_end = split['train']
+    val_start, val_end     = split['val']
+    test_start, test_end   = split['test']
+    
+    buffer_delta = pd.Timedelta(days=buffer_days)
+    min_data_date = pd.to_datetime(df_main['date'].min())
+    
+    def get_raw_warm_df(start_date, end_date):
+        s_date = pd.to_datetime(start_date)
+        warm_start = max(min_data_date, s_date - buffer_delta)
+        
+        mask = df_main['date'].between(warm_start, end_date)
+        return df_main[mask].copy()
+
+    df_train_warm = get_raw_warm_df(train_start, train_end)
+    df_val_warm   = get_raw_warm_df(val_start, val_end)
+    df_test_warm  = get_raw_warm_df(test_start, test_end)
+    
+    scaler = StandardScaler()
+    
+    df_train_warm[num_cols] = scaler.fit_transform(df_train_warm[num_cols])
+    if len(df_val_warm) > 0:
+        df_val_warm[num_cols] = scaler.transform(df_val_warm[num_cols])
+        
+    if len(df_test_warm) > 0:
+        df_test_warm[num_cols] = scaler.transform(df_test_warm[num_cols])
+        
+    return df_train_warm, df_val_warm, df_test_warm

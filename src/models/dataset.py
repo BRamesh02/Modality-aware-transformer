@@ -2,7 +2,6 @@ import torch
 from torch.utils.data import Dataset
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
 
 class FinancialDataset(Dataset):
     def __init__(self, df: pd.DataFrame, window_size: int = 60, min_date=None, max_date=None, forecast_horizon=1):
@@ -101,7 +100,10 @@ class FinancialDataset(Dataset):
         # y_hist = ce que tu donnes au decoder (teacher forcing)
         # [y_t, y_{t+1}, ..., y_{t+H-1}] (shift d'un pas)
         y_hist = self.data_target[t - 1 : t - 1 + H]    # [H] = r_t..r_{t+H-1}
-
+        
+        # Metadata for evaluation
+        date_val = str(self.df.iloc[i + T + H - 2]['date'])
+        permno_val = int(self.df.iloc[i]['permno'])
         
         # return {"x_num": x_num, "x_text": x_text, "y": y}
         # return {"x_num": x_num, "x_sent": x_sent, "x_emb": x_emb, "y": y}
@@ -109,48 +111,12 @@ class FinancialDataset(Dataset):
             "x_num": x_num,
             "x_sent": x_sent,
             "x_emb": x_emb,
-            "y_hist": y_hist,      # input  decoder
-            "y_future": y_future,  # target for loss
+            "y_hist": y_hist,      
+            "y_future": y_future,
+            "date": date_val,
+            "permno": permno_val,
         }
 
-
-def prepare_scaled_fold(df_main:pd.DataFrame, num_cols:list[str], split, buffer_days=90):
-    """
-    Handles the buffering and scaling for a single Walk-Forward fold.
-    
-    Logic:
-    1. Extract 'Warm' DataFrames (Official Period + 90 days prior context).
-    2. Fit Scaler on the FULL 'Train Warm' set (Buffer + Official Train).
-    3. Transform Val/Test using that same scaler.
-    """
-    train_start, train_end = split['train']
-    val_start, val_end     = split['val']
-    test_start, test_end   = split['test']
-    
-    buffer_delta = pd.Timedelta(days=buffer_days)
-    min_data_date = pd.to_datetime(df_main['date'].min())
-    
-    def get_raw_warm_df(start_date, end_date):
-        s_date = pd.to_datetime(start_date)
-        warm_start = max(min_data_date, s_date - buffer_delta)
-        
-        mask = df_main['date'].between(warm_start, end_date)
-        return df_main[mask].copy()
-
-    df_train_warm = get_raw_warm_df(train_start, train_end)
-    df_val_warm   = get_raw_warm_df(val_start, val_end)
-    df_test_warm  = get_raw_warm_df(test_start, test_end)
-    
-    scaler = StandardScaler()
-    
-    df_train_warm[num_cols] = scaler.fit_transform(df_train_warm[num_cols])
-    if len(df_val_warm) > 0:
-        df_val_warm[num_cols] = scaler.transform(df_val_warm[num_cols])
-        
-    if len(df_test_warm) > 0:
-        df_test_warm[num_cols] = scaler.transform(df_test_warm[num_cols])
-        
-    return df_train_warm, df_val_warm, df_test_warm
 
 def get_annual_splits(df, start_year=2010, end_year=None, train_years=5, val_years=1, test_years=1):
     """
