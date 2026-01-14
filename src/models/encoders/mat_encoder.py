@@ -85,7 +85,7 @@ class MATEncoderLayer(nn.Module):
         return x_num_out, x_text_out
     
 
-class MATEncoderPlain(nn.Module):
+class MATEncoder(nn.Module):
     def __init__(
         self,
         num_input_dim: int,
@@ -107,7 +107,6 @@ class MATEncoderPlain(nn.Module):
         # 3. Standard Projections (Input -> d_model)
         self.num_proj = nn.Sequential(
             nn.Linear(num_input_dim, d_model),
-            # nn.BatchNorm1d(60),
             nn.LayerNorm(d_model),
             nn.GELU(),
             nn.Dropout(dropout),
@@ -163,5 +162,4 @@ class MATEncoderPlain(nn.Module):
         for layer in self.layers:
             h_num, h_text = layer(h_num, h_text)
 
-        # RETOURNE DIRECTEMENT LES ETATS CACHES
         return h_num, h_text
