@@ -8,8 +8,8 @@ sys.path.append(str(project_root))
 
 from src.numerical_data.target import compute_vol_scaled_returns
 
-MARKET_FILE = project_root / "data" / "processed" / "features_market.parquet"
-OUTPUT_FILE = project_root / "data" / "processed" / "target.parquet"
+MARKET_FILE = project_root / "data" / "processed" / "numerical_data" / "features_market.parquet"
+OUTPUT_FILE = project_root / "data" / "processed" / "numerical_data" / "target.parquet"
 
 PREDICTION_HORIZON = 1 
 
@@ -25,7 +25,6 @@ def main():
         columns=["date", "permno", "mkt_log_ret", "mkt_volatility"]
     )
     
-    print("Computing Volatility-Scaled Returns...")
     df_target = compute_vol_scaled_returns(df_mkt, horizon=PREDICTION_HORIZON)
     
     print("\nTarget Statistics:")

@@ -6,21 +6,18 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
-PROCESSED_DIR = project_root / "data" / "processed"
+PROCESSED_DIR = project_root / "data" / "processed" / "numerical_data"
 MARKET_FILE = PROCESSED_DIR / "features_market.parquet"
 OUTPUT_FILE = PROCESSED_DIR / "returns.parquet"
 
 def main():
-    print("--- Step 5: Building Returns Table ---")
+    print("--- Step 6: Building Returns Table ---")
     
     if not MARKET_FILE.exists():
         raise FileNotFoundError(f"Market features not found: {MARKET_FILE}")
     
     print(f"Loading: {MARKET_FILE}")
     df_mkt = pd.read_parquet(MARKET_FILE)
-    
-    print("Converting Log Returns -> Returns...")
-    
     df_ret = df_mkt[["date", "permno"]].copy()
     
     if df_mkt["mkt_log_ret"].max() > 2.0:

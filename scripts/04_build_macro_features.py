@@ -14,8 +14,8 @@ from src.numerical_data.features_macro import (
     merge_and_format_macro
 )
 
-MARKET_FILE = project_root / "data" / "processed" / "features_market.parquet"
-OUTPUT_FILE = project_root / "data" / "processed" / "features_macro.parquet"
+MARKET_FILE = project_root / "data" / "processed" / "numerical_data" / "features_market.parquet"
+OUTPUT_FILE = project_root / "data" / "processed" / "numerical_data" / "features_macro.parquet"
 START_DATE = "2007-01-01"
 
 def main():
@@ -44,7 +44,7 @@ def main():
     df_macro_full = merge_and_format_macro(df_monthly_proc, df_daily_proc)
     
     if MARKET_FILE.exists():
-        print("Aligning to Market Skeleton...")
+        print("Aligning to Market Data dates...")
         df_mkt_dates = pd.read_parquet(MARKET_FILE, columns=["date"])["date"].unique()
         df_mkt_dates = pd.DataFrame(index=pd.to_datetime(df_mkt_dates)).sort_index()
         

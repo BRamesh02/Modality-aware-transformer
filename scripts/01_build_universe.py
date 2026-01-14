@@ -10,13 +10,13 @@ from src.numerical_data.wrds_client import WRDSClient
 from src.numerical_data.universe import build_full_presence_matrix
 
 RAW_DIR = project_root / "data" / "raw"
-LEGACY_DIR = RAW_DIR / "wrds_sp500_constituents"
+LEGACY_DIR = RAW_DIR / "wrds_sp5scripts/02_build_market_features.py00_constituents"
 GITHUB_FILE = RAW_DIR / "wikipedia_sp500_constituents" / "wikipedia_sp500_constituents.csv"
-OUTPUT_DIR = project_root / "data" / "processed"
+OUTPUT_DIR = project_root / "data" / "processed"/ "numerical_data"
 OUTPUT_FILE = OUTPUT_DIR / "sp500_universe.parquet"
 
 def main():
-    print(f"--- Starting Universe Construction ---")
+    print("--- Step 1: Starting Universe Construction ---")
     
     client = WRDSClient()
     

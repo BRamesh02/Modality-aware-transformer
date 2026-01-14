@@ -173,7 +173,7 @@ def optimize_and_save(df: pd.DataFrame, output_path: Path):
         print(f"  -> Downcasting {len(float_cols)} float64 columns to float32...")
         df[float_cols] = df[float_cols].astype('float32')
         
-    print(f"[Save] Writing to disk: {output_path}...")
+    print(f"[Save] Writing to path: {output_path}...")
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         df.to_parquet(output_path, engine="pyarrow", compression="snappy", index=False)

@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 import glob
 from typing import List, Dict, Optional
-from src.data.wrds_client import WRDSClient
+from src.numerical_data.wrds_client import WRDSClient
 
 # --- Constants ---
 TICKER_CLEANING_MAP = {
@@ -42,7 +42,7 @@ def parse_wrds_legacy_csvs(folder_path: Path, start_year: int, end_year: int) ->
     permnos = sorted(df_raw['PERMNO'].dropna().unique().astype(int))
     matrix = pd.DataFrame(0, index=timeline, columns=permnos, dtype=np.int8)
     
-    print("[Legacy] Constructing binary matrix...")
+    print("[Legacy] Constructing universe matrix...")
     for _, row in df_raw.iterrows():
         try:
             p = int(row['PERMNO'])

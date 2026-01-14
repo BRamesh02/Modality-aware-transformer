@@ -11,9 +11,8 @@ sys.path.append(str(project_root))
 
 from src.fnspid.text_functions import clean_str, norm_url, same_or_next_trading_day_nyse
 
-
-IN_DIR = project_root / "data" / "fnspid_raw"
-OUT_DIR = project_root / "data" / "fnspid_preprocessed"
+IN_DIR = project_root / "data" / "raw" / "fnspid"
+OUT_DIR = project_root / "data" / "preprocessed" / "fnspid"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 DELETE_RAW = True  # Set to True only when everything is validated
@@ -52,9 +51,17 @@ def _out_name(a: str, b: str) -> str:
 
 
 def main() -> None:
+    print("--- Step 9: Cleaning Raw FNSPID Text Data ---")
+    print(f"Reading from: {IN_DIR}")
+    print(f"Writing to:   {OUT_DIR}")
+
+    # Check if input directory exists
+    if not IN_DIR.exists():
+        raise FileNotFoundError(f"Input directory does not exist: {IN_DIR}")
+
     raw_files = sorted(IN_DIR.glob(RAW_GLOB))
     if not raw_files:
-        raise FileNotFoundError(f"No files matching {IN_DIR / RAW_GLOB}")
+        raise FileNotFoundError(f"No files matching {RAW_GLOB} in {IN_DIR}")
 
     dfs = []
     total_in = 0

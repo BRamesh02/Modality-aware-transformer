@@ -14,12 +14,12 @@ from src.numerical_data.features_market import (
     format_market_features
 )
 
-UNIVERSE_FILE = project_root / "data" / "processed" / "sp500_universe.parquet"
-OUTPUT_FILE = project_root / "data" / "processed" / "features_market.parquet"
+UNIVERSE_FILE = project_root / "data" / "processed" / "numerical_data" / "sp500_universe.parquet"
+OUTPUT_FILE = project_root / "data" / "processed" / "numerical_data" / "features_market.parquet"
 START_DATE = "2007-01-01" 
 
 def main():
-    print("--- Step 2: Building Market Features (Price/Vol) ---")
+    print("--- Step 2: Building Market Features ---")
     
     if not UNIVERSE_FILE.exists():
         raise FileNotFoundError(f"Universe file missing: {UNIVERSE_FILE}")
