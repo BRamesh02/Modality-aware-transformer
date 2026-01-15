@@ -13,25 +13,19 @@ class WalkForwardEvaluator:
         all_preds = []
         
         for batch in tqdm(dataloader, desc=f"Inference {fold_name}"):
-            # 1. Inputs
             x_num  = batch['x_num'].to(self.device)
             x_sent = batch['x_sent'].to(self.device)
             x_emb  = batch['x_emb'].to(self.device)
             y0     = batch['y_hist'][:, 0].to(self.device)
             
-            # 2. Metadata
-            dates = batch['date_forecast'] # List of strings
-            permnos = batch['permno']      # Tensor of ints
+            dates = batch['date_forecast'] 
+            permnos = batch['permno']
             
-            # 3. Predict
-            # Shape: [Batch, Horizon]
             y_hats = self.model.predict(x_num, x_sent, x_emb, y0)
             
-            # 4. CPU Extraction
             y_hats_np = y_hats.cpu().numpy()
             y_true_np = batch['y_future'].cpu().numpy()
             
-            # 5. Build Records
             batch_size = x_num.size(0)
             horizon = y_hats.shape[1]
             

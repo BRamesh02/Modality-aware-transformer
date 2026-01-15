@@ -7,7 +7,7 @@ class EarlyStopping:
     Early stops the training if validation loss doesn't improve after a given patience.
     Saves the best model state to a file.
     """
-    def __init__(self, patience=5, min_delta=0.0, path='checkpoint.pt', verbose=False):
+    def __init__(self, patience=int, min_delta=0.0, path='checkpoint.pt', verbose=False):
         """
         Args:
             patience (int): How long to wait after last time validation loss improved.

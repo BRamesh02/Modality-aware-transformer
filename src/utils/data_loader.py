@@ -13,7 +13,7 @@ def load_parquet(file_path):
     print(f"Warning: {file_path} not found.")
     return None
 
-def load_and_merge_data(data_dir: Path, start_date="2010-01-01", end_date="2023-12-15"):
+def load_and_merge_data(data_dir: Path, start_date=str, end_date=str):
     """
     Loads Target, Market, Ratios, Macro, and Text data.
     Merges them into a Point-in-Time dataframe and handles missing embeddings.
@@ -90,7 +90,7 @@ def load_and_merge_data(data_dir: Path, start_date="2010-01-01", end_date="2023-
     print("Done! Final Data Shape:", df_main.shape)
     return df_main
 
-def prepare_scaled_fold(df_main:pd.DataFrame, num_cols:list[str], split, buffer_days=90):
+def prepare_scaled_fold(df_main:pd.DataFrame, num_cols:list[str], split, buffer_days=int):
     """
     Handles the buffering and scaling for a single Walk-Forward fold.
     

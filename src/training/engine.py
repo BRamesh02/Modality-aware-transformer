@@ -1,7 +1,7 @@
 import torch
 from tqdm import tqdm
 
-def train_epoch(model, dataloader, optimizer, criterion, device):
+def train_epoch(model, dataloader, optimizer, criterion, device, scheduler=None):
     """
     Generic training loop for both Canonical and MAT models.
     Supports optional text embeddings (x_emb can be None).
@@ -30,7 +30,10 @@ def train_epoch(model, dataloader, optimizer, criterion, device):
 
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
-
+        
+        if scheduler is not None:
+            scheduler.step()
+        
         total_loss += loss.item()
         progress_bar.set_postfix({"loss": f"{loss.item():.5f}"})
 

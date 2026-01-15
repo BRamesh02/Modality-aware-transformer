@@ -18,14 +18,14 @@ class MAT(nn.Module):
         self,
         num_input_dim: int,
         n_sent: int,
-        d_model: int = 128,
-        nhead: int = 4,
-        enc_layers: int = 2,
-        dec_layers: int = 2,
-        dropout: float = 0.2,
-        forecast_horizon: int = 1,
+        d_model: int,
+        nhead: int,
+        enc_layers: int,
+        dec_layers: int,
+        dropout: float,
+        forecast_horizon: int,
         encoder_type=None,
-        use_emb: bool = False,
+        use_emb: bool = True,
     ):
         super().__init__()
         self.use_emb = use_emb

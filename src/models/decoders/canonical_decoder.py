@@ -65,7 +65,7 @@ class DecoderLayer(nn.Module):
 
 
 class CanonicalDecoder(nn.Module):
-    def __init__(self, d_model=128, nhead=4, num_layers=2, dropout=0.2):
+    def __init__(self, d_model=int, nhead=int, num_layers=int, dropout=float):
         super().__init__()
         self.layers = nn.ModuleList([DecoderLayer(d_model, nhead, dropout) for _ in range(num_layers)])
 

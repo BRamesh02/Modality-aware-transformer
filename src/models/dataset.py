@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 class FinancialDataset(Dataset):
-    def __init__(self, df: pd.DataFrame, window_size: int = 60, min_date=None, max_date=None, forecast_horizon=1, use_emb: bool = True):
+    def __init__(self, df: pd.DataFrame, window_size: int, min_date=None, max_date=None, forecast_horizon=int, use_emb: bool = True):
         self.window_size = window_size
         self.H = forecast_horizon
         self.use_emb = use_emb
@@ -110,7 +110,7 @@ class FinancialDataset(Dataset):
             "permno": permno_val,
         }
 
-def get_annual_splits(df, start_year=2010, end_year=None, train_years=5, val_years=1, test_years=1):
+def get_annual_splits(df, start_year:int, train_years:int, val_years:int, test_years:int, end_year:int=None):
     """
     Generates the Walk-Forward years.
     

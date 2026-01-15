@@ -88,12 +88,11 @@ class MATEncoderWeighted(nn.Module):
     def __init__(
         self,
         num_input_dim: int,
-        #text_input_dim: int,
-        n_sent: int,
-        d_model: int = 128,
-        nhead: int = 4,
-        num_layers: int = 2,
-        dropout: float = 0.2,
+        sent_input_dim: int,
+        d_model: int,
+        nhead: int,
+        num_layers: int,
+        dropout: float,
         sent_dim: int = 32,
         emb_dim: int = 96,
         use_emb: bool = True,
@@ -139,7 +138,7 @@ class MATEncoderWeighted(nn.Module):
         # )
 
         self.sent_proj = nn.Sequential(
-            nn.Linear(n_sent, sent_dim),
+            nn.Linear(sent_input_dim, sent_dim),
             nn.LayerNorm(sent_dim),
             nn.GELU(),
             nn.Dropout(dropout),

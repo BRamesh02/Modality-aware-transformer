@@ -17,11 +17,6 @@ class FeatureAttention(nn.Module):
         )
 
     def forward(self, x):
-        # 1. Compute Importance Scores [Batch, Seq, Input_Dim]
         weights = self.attn(x)
-
-        # 2. Re-weight the input
         x_weighted = x * weights
-
-        # 3. Return BOTH (So we can reuse weights later)
         return x_weighted, weights

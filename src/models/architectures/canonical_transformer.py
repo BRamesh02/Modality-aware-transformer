@@ -14,18 +14,16 @@ class CanonicalTransformer(nn.Module):
     - Sortie: prédictions y_{t+1}..y_{t+H} via états 1..H
     """
     def __init__(self, num_input_dim: int, n_sent: int,
-                 d_model: int = 128, nhead: int = 4,
-                 enc_layers: int = 2, dec_layers: int = 2,
-                 dropout: float = 0.2, forecast_horizon: int = 1, use_emb: bool = False):
+                 d_model: int, nhead: int,
+                 enc_layers: int, dec_layers: int,
+                 dropout: float, forecast_horizon: int = 1, use_emb: bool = True):
         super().__init__()
         self.H = forecast_horizon
         self.d_model = d_model
         
-        #utilisation or not embeddings
         self.use_emb = use_emb
         self.encoder = CanonicalEncoder(num_input_dim, n_sent, d_model, nhead, enc_layers, dropout , use_emb=self.use_emb,)
 
-        # embedding du target scalaire
         self.y_in_proj = nn.Sequential(
             nn.Linear(1, d_model),
             nn.LayerNorm(d_model),
@@ -36,9 +34,8 @@ class CanonicalTransformer(nn.Module):
         # BOS token
         self.bos = nn.Parameter(torch.zeros(1, 1, d_model))
 
-        # PE pour le tgt
         self.tgt_pos = PositionalEncoding(d_model, dropout)
-
+        
         self.decoder = CanonicalDecoder(d_model, nhead, dec_layers, dropout)
 
         self.head = nn.Sequential(
