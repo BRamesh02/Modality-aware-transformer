@@ -3,13 +3,13 @@ import json
 import time
 from pathlib import Path
 
-project_root = Path(__file__).resolve().parent.parent
-sys.path.append(str(project_root))
+from src.config import PROJECT_ROOT
+sys.path.append(str(PROJECT_ROOT))
 
 from src.utils.drive_downloads import download_drive_files
 
-IDS_PATH = project_root / "config" / "drive_ids.json"
-DATA_ROOT = project_root / "data"
+IDS_PATH = PROJECT_ROOT / "config" / "drive_ids.json"
+DATA_ROOT = PROJECT_ROOT / "data"
 
 SLEEP_SEC = 1.5
 EXT = ".parquet"

@@ -5,9 +5,9 @@ import numpy as np
 from pathlib import Path
 from dotenv import load_dotenv
 
-project_root = Path(__file__).resolve().parent.parent
-sys.path.append(str(project_root))
-load_dotenv(project_root / ".env")
+from src.config import PROJECT_ROOT
+sys.path.append(str(PROJECT_ROOT))
+load_dotenv(PROJECT_ROOT / ".env")
 
 from src.numerical_data.wrds_client import WRDSClient
 from src.numerical_data.factors import (
@@ -17,7 +17,7 @@ from src.numerical_data.factors import (
     compute_momentum
 )
 
-PROCESSED_DIR = project_root / "data" / "processed" / "numerical_data"
+PROCESSED_DIR = PROJECT_ROOT / "data" / "processed" / "numerical_data"
 UNIVERSE_FILE = PROCESSED_DIR / "sp500_universe.parquet" 
 MARKET_FILE = PROCESSED_DIR / "features_market.parquet"
 RATIO_FILE = PROCESSED_DIR / "features_ratios.parquet"

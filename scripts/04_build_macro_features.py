@@ -3,9 +3,9 @@ import pandas as pd
 from pathlib import Path
 from dotenv import load_dotenv
 
-project_root = Path(__file__).resolve().parent.parent
-sys.path.append(str(project_root))
-load_dotenv(project_root / ".env")
+from src.config import PROJECT_ROOT
+sys.path.append(str(PROJECT_ROOT))
+load_dotenv(PROJECT_ROOT / ".env")
 
 from src.numerical_data.fred_client import FredClient
 from src.numerical_data.features_macro import (
@@ -14,8 +14,8 @@ from src.numerical_data.features_macro import (
     merge_and_format_macro
 )
 
-MARKET_FILE = project_root / "data" / "processed" / "numerical_data" / "features_market.parquet"
-OUTPUT_FILE = project_root / "data" / "processed" / "numerical_data" / "features_macro.parquet"
+MARKET_FILE = PROJECT_ROOT / "data" / "processed" / "numerical_data" / "features_market.parquet"
+OUTPUT_FILE = PROJECT_ROOT / "data" / "processed" / "numerical_data" / "features_macro.parquet"
 START_DATE = "2007-01-01"
 
 def main():

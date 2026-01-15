@@ -3,10 +3,10 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-project_root = Path(__file__).resolve().parent.parent
-sys.path.append(str(project_root))
+from src.config import PROJECT_ROOT
+sys.path.append(str(PROJECT_ROOT))
 
-PROCESSED_DIR = project_root / "data" / "processed" / "numerical_data"
+PROCESSED_DIR = PROJECT_ROOT / "data" / "processed" / "numerical_data"
 MARKET_FILE = PROCESSED_DIR / "features_market.parquet"
 OUTPUT_FILE = PROCESSED_DIR / "returns.parquet"
 

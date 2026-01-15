@@ -2,11 +2,10 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-current_dir = Path(__file__).resolve().parent
-project_root = current_dir.parent
-sys.path.append(str(project_root))
+from src.config import PROJECT_ROOT
+sys.path.append(str(PROJECT_ROOT))
 
-load_dotenv(project_root / ".env")
+load_dotenv(PROJECT_ROOT / ".env")
 
 from src.fnspid.linking import (
     load_mapping_table,
@@ -16,7 +15,7 @@ from src.fnspid.linking import (
     optimize_and_save
 )
 
-BASE_DIR = project_root
+BASE_DIR = PROJECT_ROOT
 
 INPUT_DIR = BASE_DIR / "data" / "processed" / "fnspid"
 

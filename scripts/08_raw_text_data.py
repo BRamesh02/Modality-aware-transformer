@@ -6,8 +6,8 @@ from pathlib import Path
 
 from datasets import load_dataset
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+from src.config import PROJECT_ROOT
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.fnspid import text_functions as tf
 from src.fnspid.store_data import store_raw_articles_parquet

@@ -7,16 +7,16 @@ import torch
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer, AutoModel, AutoModelForSequenceClassification
 
-project_root = Path(__file__).resolve().parent.parent
-sys.path.append(str(project_root))
+from src.config import PROJECT_ROOT
+sys.path.append(str(PROJECT_ROOT))
 
 from src.fnspid.bert_features import (  
     extract_bin_suffix,
     process_bin_to_stock_date_features,
 )
 
-IN_DIR = project_root / "data" / "preprocessed" / "fnspid"
-OUT_DIR = project_root / "data" / "processed" / "fnspid"
+IN_DIR = PROJECT_ROOT / "data" / "preprocessed" / "fnspid"
+OUT_DIR = PROJECT_ROOT / "data" / "processed" / "fnspid"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 MODEL_NAME = "ProsusAI/finbert"

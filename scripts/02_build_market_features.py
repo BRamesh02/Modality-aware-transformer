@@ -3,9 +3,9 @@ import pandas as pd
 from pathlib import Path
 from dotenv import load_dotenv
 
-project_root = Path(__file__).resolve().parent.parent
-sys.path.append(str(project_root))
-load_dotenv(project_root / ".env")
+from src.config import PROJECT_ROOT
+sys.path.append(str(PROJECT_ROOT))
+load_dotenv(PROJECT_ROOT / ".env")
 
 from src.numerical_data.wrds_client import WRDSClient
 from src.numerical_data.features_market import (
@@ -14,8 +14,8 @@ from src.numerical_data.features_market import (
     format_market_features
 )
 
-UNIVERSE_FILE = project_root / "data" / "processed" / "numerical_data" / "sp500_universe.parquet"
-OUTPUT_FILE = project_root / "data" / "processed" / "numerical_data" / "features_market.parquet"
+UNIVERSE_FILE = PROJECT_ROOT / "data" / "processed" / "numerical_data" / "sp500_universe.parquet"
+OUTPUT_FILE = PROJECT_ROOT / "data" / "processed" / "numerical_data" / "features_market.parquet"
 START_DATE = "2007-01-01" 
 
 def main():

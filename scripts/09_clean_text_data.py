@@ -6,13 +6,13 @@ import pandas as pd
 from tqdm.auto import tqdm
 import shutil
 
-project_root = Path(__file__).resolve().parent.parent
-sys.path.append(str(project_root))
+from src.config import PROJECT_ROOT
+sys.path.append(str(PROJECT_ROOT))
 
 from src.fnspid.text_functions import clean_str, norm_url, same_or_next_trading_day_nyse
 
-IN_DIR = project_root / "data" / "raw" / "fnspid"
-OUT_DIR = project_root / "data" / "preprocessed" / "fnspid"
+IN_DIR = PROJECT_ROOT / "data" / "raw" / "fnspid"
+OUT_DIR = PROJECT_ROOT / "data" / "preprocessed" / "fnspid"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 DELETE_RAW = True  # Set to True only when everything is validated

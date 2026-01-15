@@ -2,17 +2,17 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-project_root = Path(__file__).resolve().parent.parent
-sys.path.append(str(project_root))
-load_dotenv(project_root / ".env")
+from src.config import PROJECT_ROOT
+sys.path.append(str(PROJECT_ROOT))
+load_dotenv(PROJECT_ROOT / ".env")
 
 from src.numerical_data.wrds_client import WRDSClient
 from src.numerical_data.universe import build_full_presence_matrix
 
-RAW_DIR = project_root / "data" / "raw"
+RAW_DIR = PROJECT_ROOT / "data" / "raw"
 LEGACY_DIR = RAW_DIR / "wrds_sp5scripts/02_build_market_features.py00_constituents"
 GITHUB_FILE = RAW_DIR / "wikipedia_sp500_constituents" / "wikipedia_sp500_constituents.csv"
-OUTPUT_DIR = project_root / "data" / "processed"/ "numerical_data"
+OUTPUT_DIR = PROJECT_ROOT / "data" / "processed"/ "numerical_data"
 OUTPUT_FILE = OUTPUT_DIR / "sp500_universe.parquet"
 
 def main():
