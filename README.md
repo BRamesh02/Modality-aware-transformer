@@ -21,21 +21,24 @@ This project follows the experimental protocol of the original Modality-aware Tr
 Financial markets are influenced by both historical numerical signals and unstructured textual information. Classical Transformers struggle to efficiently fuse heterogeneous modalities.
 
 The Modality-Aware Transformer (MAT) addresses this limitation by:
-	•	Encoding each modality separately
-	•	Using learned modality-aware queries
-	•	Performing cross-modal attention in a structured manner
+   -	Encoding each modality separately
+	-	Using learned modality-aware queries
+	-	Performing cross-modal attention in a structured manner
 
 This project:
-	•	Implements a clean and modular version of MAT in PyTorch
-   •  Implements a standard Transformer in PyTorch
-	•	Compares MAT against standard Transformer baselines
-	•	Evaluates performance on financial return prediction tasks
+   -	Implements a clean and modular version of MAT in PyTorch
+   -  Implements a standard Transformer in PyTorch
+	-	Compares MAT against standard Transformer baselines
+	-	Evaluates performance on financial return prediction tasks
 
 ---
 
 ## Repository Structure
 
-```
+<details>
+<summary><strong> Full repository structure</strong></summary>
+
+```text
 Modality-aware-transformer/
 ├─ README.md                      # Project overview, structure, and usage
 ├─ requirements.txt               # Python dependencies
@@ -115,6 +118,8 @@ Modality-aware-transformer/
       ├─ data_loader.py             # Shared data loading utilities
       └─ drive_downloads.py         # Drive download helpers
 ```
+
+</details>
 
 ---
 
