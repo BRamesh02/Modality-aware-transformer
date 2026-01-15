@@ -78,7 +78,7 @@ def train_model_for_year(
     model = get_model_instance(model_type, model_config, device)
     model.apply(init_weights_orthogonal)
     
-    model = torch.compile(model, mode="max-autotune")
+    model = torch.compile(model, mode="default")
     
     optimizer = optim.AdamW(
         model.parameters(), 
