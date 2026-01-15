@@ -2,7 +2,7 @@
 
 This repository contains an implementation and empirical study of a Modality-Aware Transformer (MAT) applied to financial prediction tasks using multimodal data, combining numerical time series (e.g. stock returns) and textual information (e.g. financial news).
 
-The project is conducted in the context of a research-oriented machine learning study for the **ENSAE course Advanced Machine Learning_** given by M. Stromme.
+The project is conducted in the context of a research-oriented machine learning study for the **ENSAE course Advanced Machine Learning** given by M. Stromme.
 
 **Authors**  
 - Ramesh Brian  
@@ -27,6 +27,7 @@ The Modality-Aware Transformer (MAT) addresses this limitation by:
 
 This project:
 	•	Implements a clean and modular version of MAT in PyTorch
+   •  Implements a standard Transformer in PyTorch
 	•	Compares MAT against standard Transformer baselines
 	•	Evaluates performance on financial return prediction tasks
 
@@ -38,8 +39,11 @@ This project:
 Modality-aware-transformer/
 ├─ README.md                      # Project overview, structure, and usage
 ├─ requirements.txt               # Python dependencies
+├─ data/
+│  ├─ raw/                         # Raw inputs (WRDS, Wikipedia, FNSPID, etc.)
+│  └─ processed/                   # Processed numerical/text features
 ├─ notebooks/
-│  ├─ encoders_decoders.ipynb      # Encoder/decoder experiments and sanity checks
+│  ├─ debug.ipynb                  # Debugging and quick checks
 │  ├─ test_model.ipynb             # End-to-end model testing notebook
 │  └─ text_data.ipynb              # Text data exploration and preprocessing
 ├─ scripts/
@@ -54,11 +58,18 @@ Modality-aware-transformer/
 │  ├─ 09_clean_text_data.py        # Clean and normalize text data
 │  ├─ 10_build_text_features_stock.py # Build stock-level text features
 │  ├─ 11_link_tickers.py           # Link tickers to identifiers across sources
-│  └─ 12_drive_gather.py           # Gather data artifacts from shared drive
+│  ├─ 12_gather_data_from_drive.py # Gather data artifacts from shared drive
+│  ├─ 13_run_training_and_inference.py # Train and run inference end-to-end
+│  ├─ 14_run_inference_only.py     # Run inference with a trained model
+│  └─ 15_run_predictions_evaluation.py # Evaluate predictions and generate plots
 └─ src/
    ├─ evaluation/
    │  ├─ predictions/
-   │  │  └─ inference.py           # Prediction/inference utilities
+   │  │  ├─ compare.py             # Compare model predictions
+   │  │  ├─ evaluator.py           # Walk-forward evaluation utilities
+   │  │  ├─ inference.py           # Prediction/inference utilities
+   │  │  ├─ metrics.py             # Prediction metrics
+   │  │  └─ plots.py               # Prediction plots
    │  └─ portfolio/
    │     ├─ attribution.py         # Performance attribution metrics
    │     ├─ backtest.py            # Portfolio backtesting logic
@@ -84,6 +95,7 @@ Modality-aware-transformer/
    │  │  ├─ feature_attention.py    # Feature-level attention layers
    │  │  ├─ masks.py                # Attention mask utilities
    │  │  └─ positional_encoding.py  # Positional encoding layers
+   │  ├─ config.py                  # Model configuration defaults
    │  └─ dataset.py                 # Dataset and dataloader definitions
    ├─ numerical_data/
    │  ├─ factors.py                 # Factor construction logic
@@ -97,8 +109,8 @@ Modality-aware-transformer/
    ├─ training/
    │  ├─ callbacks.py               # Training callbacks and logging
    │  ├─ engine.py                  # Training/evaluation engine
-   │  ├─ train_mat.py               # MAT training entry point
-   │  └─ train_transformer.py       # Baseline transformer training entry point
+   │  ├─ losses.py                  # Training loss functions
+   │  └─ runner.py                  # Training runner/orchestration
    └─ utils/
       ├─ data_loader.py             # Shared data loading utilities
       └─ drive_downloads.py         # Drive download helpers
@@ -130,8 +142,10 @@ Notes:
 3. Option A: download prebuilt artifacts from Google Drive
 
 ```bash
-python scripts/12_drive_gather.py
+python scripts/12_gather_data_from_drive.py
 ```
+
+Note: place `drive_ids.json` in `config/` at the repo root before running this.
 
 4. Option B: build datasets from scratch (run in order)
 
@@ -174,11 +188,29 @@ If the linked text file name differs, align it with the loader expectation in
 `src/utils/data_loader.py` (the loader reads
 `data/processed/fnspid/process_and_linked_text_features.parquet`).
 
-6. Train models
+6. Configure the experiment
 
+Edit `src/models/config.py` to set dates, horizons, batch size, and whether to
+use text embeddings (`use_emb`).
 
-Then run:
+7. Train and run inference (walk-forward)
 
 ```bash
+python scripts/13_run_training_and_inference.py
+```
 
+Outputs:
+- `data/processed/predictions/mat_walkforward.parquet`
+- `data/processed/predictions/canonical_walkforward.parquet`
+
+8. Inference only (reuse saved weights)
+
+```bash
+python scripts/14_run_inference_only.py
+```
+
+9. Evaluate predictions and generate plots
+
+```bash
+python scripts/15_run_predictions_evaluation.py
 ```
