@@ -82,7 +82,7 @@ class CanonicalEncoder(nn.Module):
             dropout=dropout,
             activation="gelu",
             batch_first=True,
-            norm_first=True,   # Put False here if we want to align with the MAT
+            norm_first=True,
         )
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
 
