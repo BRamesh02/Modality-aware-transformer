@@ -100,21 +100,10 @@ Modality-aware-transformer/
 <details>
 <summary><strong>src/</strong></summary>
 
-```text
-src/
-├─ evaluation/
-├─ fnspid/
-├─ models/
-├─ numerical_data/
-├─ training/
-└─ utils/
-```
-
   <details>
-  <summary><strong>src/evaluation/</strong> — evaluation utilities</summary>
+  <summary><strong>evaluation/</strong></summary>
 
   ```text
-  src/evaluation/
   ├─ predictions/
   │  ├─ compare.py                  # Compare model predictions
   │  ├─ evaluator.py                # Walk-forward evaluation utilities
@@ -130,10 +119,9 @@ src/
   </details>
 
   <details>
-  <summary><strong>src/fnspid/</strong> — text processing (FNSPID)</summary>
+  <summary><strong>fnspid/</strong></summary>
 
   ```text
-  src/fnspid/
   ├─ bert_features.py               # BERT-based feature extraction
   ├─ linking.py                     # Text-to-identifier linking helpers
   ├─ store_data.py                  # Data storage routines
@@ -142,10 +130,9 @@ src/
   </details>
 
   <details>
-  <summary><strong>src/models/</strong> — model code</summary>
+  <summary><strong>models/</strong></summary>
 
   ```text
-  src/models/
   ├─ architectures/
   │  ├─ canonical_transformer.py    # Baseline transformer architecture
   │  └─ mat.py                      # Modality-Aware Transformer architecture
@@ -166,10 +153,9 @@ src/
   </details>
 
   <details>
-  <summary><strong>src/numerical_data/</strong> — numerical features</summary>
+  <summary><strong>numerical_data/</strong></summary>
 
   ```text
-  src/numerical_data/
   ├─ factors.py                     # Factor construction logic
   ├─ features_macro.py              # Macro features computation
   ├─ features_market.py             # Market features computation
@@ -182,10 +168,9 @@ src/
   </details>
 
   <details>
-  <summary><strong>src/training/</strong> — training pipeline</summary>
+  <summary><strong>training/</strong></summary>
 
   ```text
-  src/training/
   ├─ callbacks.py                   # Training callbacks and logging
   ├─ engine.py                      # Training/evaluation engine
   ├─ losses.py                      # Training loss functions
@@ -194,10 +179,9 @@ src/
   </details>
 
   <details>
-  <summary><strong>src/utils/</strong> — shared utilities</summary>
+  <summary><strong>utils/</strong></summary>
 
   ```text
-  src/utils/
   ├─ data_loader.py                 # Shared data loading utilities
   └─ drive_downloads.py             # Drive download helpers
   ```
@@ -210,15 +194,18 @@ src/
 
 ## Usage to reproduce results
 
-1. Install dependencies
+<details>
+<summary><strong>Step 1 — Install dependencies</strong></summary>
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+</details>
 
-2. Set environment variables (create `.env` at repo root)
+<details>
+<summary><strong>Step 2 — Set environment variables (.env)</strong></summary>
 
 ```bash
 WRDS_USERNAME=your_wrds_username
@@ -228,16 +215,19 @@ FRED_API_KEY=your_fred_key
 Notes:
 - WRDS is required for numerical data (Steps 1-3 and 7).
 - FRED is optional; Step 4 will skip macro features if `FRED_API_KEY` is missing.
+</details>
 
-3. Option A: download prebuilt artifacts from Google Drive
+<details>
+<summary><strong>Step 3 — Choose your data source</strong></summary>
+
+Option A: download prebuilt artifacts from Google Drive
+Note: place `drive_ids.json` in `config/` at the repo root before running this.
 
 ```bash
 python scripts/12_gather_data_from_drive.py
 ```
 
-Note: place `drive_ids.json` in `config/` at the repo root before running this.
-
-4. Option B: build datasets from scratch (run in order)
+Option B: build datasets from scratch (run in order)
 
 Numerical pipeline:
 ```bash
@@ -261,8 +251,10 @@ python scripts/11_link_tickers.py
 Notes:
 - Step 8 streams FNSPID via Hugging Face; Step 10 downloads FinBERT weights.
 - `scripts/11_link_tickers.py` expects `data/raw/crsp_ticker_map.parquet`.
+</details>
 
-5. Build the merged dataset (numerical + text)
+<details>
+<summary><strong>Step 4 — Build the merged dataset (numerical + text)</strong></summary>
 
 ```bash
 python - <<'PY'
@@ -277,13 +269,17 @@ PY
 If the linked text file name differs, align it with the loader expectation in
 `src/utils/data_loader.py` (the loader reads
 `data/processed/fnspid/process_and_linked_text_features.parquet`).
+</details>
 
-6. Configure the experiment
+<details>
+<summary><strong>Step 5 — Configure the experiment</strong></summary>
 
 Edit `src/models/config.py` to set dates, horizons, batch size, and whether to
 use text embeddings (`use_emb`).
+</details>
 
-7. Train and run inference (walk-forward)
+<details>
+<summary><strong>Step 6 — Train and run inference </strong></summary>
 
 ```bash
 python scripts/13_run_training_and_inference.py
@@ -292,15 +288,20 @@ python scripts/13_run_training_and_inference.py
 Outputs:
 - `data/processed/predictions/mat_walkforward.parquet`
 - `data/processed/predictions/canonical_walkforward.parquet`
+</details>
 
-8. Inference only (reuse saved weights)
+<details>
+<summary><strong>Step 7 — Inference only (reuse saved weights)</strong></summary>
 
 ```bash
 python scripts/14_run_inference_only.py
 ```
+</details>
 
-9. Evaluate predictions and generate plots
+<details>
+<summary><strong>Step 8 — Evaluate predictions and generate plots</strong></summary>
 
 ```bash
 python scripts/15_run_predictions_evaluation.py
 ```
+</details>
