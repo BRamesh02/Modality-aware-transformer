@@ -21,7 +21,8 @@ CONFIG = {
     "window_size": 60,       
     
     # How many days into the future to predict (H). 1 = Next Day Return.
-    "forecast_horizon": 1,   
+    "forecast_horizon": 5,
+    "primary_eval_horizon": 1,   
     
     # Number of scalar features per day (Price, Volatility, PE ratio, etc.).
     "num_input_dim": 22,     
@@ -41,7 +42,7 @@ CONFIG = {
     
     # If True, locks data in RAM for faster transfer to GPU. 
     # Set to False if you run out of System RAM (RAM crash), otherwise True is faster.
-    "pin_memory": False,     
+    "pin_memory": True,     
     
     # If True, keeps worker threads alive between epochs. 
     # Reduces the "pause" at the start of every new epoch.
@@ -62,7 +63,7 @@ CONFIG = {
     
     # Number of samples per gradient update. 
     # 4096 is optimized for A100/High-VRAM GPUs. Reduce to 1024 or 512 for smaller GPUs.
-    "batch_size": 8192,      
+    "batch_size": 16384,      
     
     # Loss Function: "MAE" (L1Loss) is robust to outliers. 
     # "weighted_MSE" penalizes errors on high-volatility days more heavily.
@@ -73,7 +74,7 @@ CONFIG = {
     "MSE_weight": 10,
     
     # Peak Learning Rate for the OneCycleLR scheduler.
-    "learning_rate": 5e-4,
+    "learning_rate": 7e-4,
     
     # L2 Regularization penalty. Helps prevent overfitting by keeping weights small.
     "weight_decay": 1e-4,

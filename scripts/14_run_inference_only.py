@@ -1,4 +1,3 @@
-# run_inference.py
 import sys
 import torch
 import pandas as pd
@@ -73,7 +72,17 @@ def run_pure_inference(df_main:pd.DataFrame, model_type:str, config:dict):
             )
         
         model = get_model_instance(model_type, CONFIG, device)
-        model.load_state_dict(torch.load(weights_path))
+        state_dict = torch.load(weights_path)
+        
+        if any(k.startswith("_orig_mod.") for k in state_dict.keys()):
+            from collections import OrderedDict
+            new_state_dict = OrderedDict()
+            for k, v in state_dict.items():
+                name = k.replace("_orig_mod.", "")
+                new_state_dict[name] = v
+            state_dict = new_state_dict
+            
+        model.load_state_dict(state_dict)
         
         evaluator = WalkForwardEvaluator(model, device)
         df_pred = evaluator.predict_fold(test_loader, fold_name=f"{model_type}_{year}")

@@ -194,7 +194,17 @@ def run_walk_forward(
 
         print(f"   >>> Running Inference for {year}...")
         model = get_model_instance(model_type, config, device)
-        model.load_state_dict(torch.load(best_weights_path))
+        state_dict = torch.load(best_weights_path)
+        
+        if any(k.startswith("_orig_mod.") for k in state_dict.keys()):
+            from collections import OrderedDict
+            new_state_dict = OrderedDict()
+            for k, v in state_dict.items():
+                name = k.replace("_orig_mod.", "")
+                new_state_dict[name] = v
+            state_dict = new_state_dict
+            
+        model.load_state_dict(state_dict)
         
         evaluator = WalkForwardEvaluator(model, device)
         df_pred = evaluator.predict_fold(test_loader, fold_name=f"{model_type}_{year}")
