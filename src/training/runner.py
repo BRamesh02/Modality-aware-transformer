@@ -75,44 +75,36 @@ def train_model_for_year(
 ):
     print(f"Training {model_type} for Test Year: {year}...")
     
-    # 1. Model Setup & Init
     model = get_model_instance(model_type, model_config, device)
     model.apply(init_weights_orthogonal)
     
-    # Compile for A100 Speedup
-    # Note: If you get cryptic errors, try commenting this line out first
     model = torch.compile(model, mode="max-autotune")
     
-    # 2. Optimizer
     optimizer = optim.AdamW(
         model.parameters(), 
         lr=model_config["learning_rate"], 
         weight_decay=model_config["weight_decay"]
     )
     
-    # 3. Scheduler (OneCycle)
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
         optimizer,
         max_lr=model_config["learning_rate"],             
         steps_per_epoch=len(train_loader),
         epochs=model_config["epochs"],                
-        pct_start=model_config.get("pct_start", 0.1), # Default to 10% warmup
+        pct_start=model_config.get("pct_start", 0.1),
         anneal_strategy='cos'
     )
     
-    # 4. Loss Function
     crit_name = model_config.get("criterion", "HuberLoss")
     if crit_name == "weighted_MSE":
         criterion = WeightedMSE(alpha=model_config.get("MSE_weight", 1.0))
     elif crit_name == "MAE":
         criterion = torch.nn.L1Loss()
     else:
-        # Default to Huber
         criterion = torch.nn.HuberLoss(delta=model_config.get("HuberLoss_delta", 1.0))
     
     save_path = save_dir / f"{model_type.lower()}_best_{year}.pt"
     
-    # 5. Early Stopping (Maximizing IC)
     early_stopping = EarlyStopping(
         patience=model_config["patience"], 
         path=str(save_path), 
@@ -122,24 +114,18 @@ def train_model_for_year(
     EPOCHS = model_config["epochs"]
     
     for epoch in range(EPOCHS):
-        # Train Step
         t_loss = train_epoch(model, model_config, train_loader, optimizer, criterion, device, scheduler)
-        
-        # Validation Step (Returns Tuple: Loss, IC)
-        # uses the 'validate_epoch' from src.training.engine
         v_loss, v_ic = validate_epoch(model, model_config, val_loader, criterion, device)
         
         current_lr = scheduler.get_last_lr()[0]
         print(f"   Epoch {epoch+1}/{EPOCHS} | Train Loss: {t_loss:.6f} | Val Loss: {v_loss:.6f} | Val IC: {v_ic:.4f} | LR: {current_lr:.2e}")
         
-        # Trigger Early Stopping based on IC
         early_stopping(v_ic, model)
         
         if early_stopping.early_stop:
             print(f"      [Early Stopping] Epoch {epoch+1} - Best Val IC: {early_stopping.best_ic:.4f}")
             break
             
-    # Load Best Weights (Highest IC)
     if save_path.exists():
         model.load_state_dict(torch.load(save_path))
             
@@ -162,7 +148,6 @@ def run_walk_forward(
     
     all_years_predictions = []
     
-    # Feature columns setup
     exclude_cols = ["date", "permno", "target", "emb_mean", "sent_score_mean", "sent_pos_mean", "sent_neg_mean", "sent_score_std", "log_n_news"]
     all_num_cols = [c for c in df_main.columns if c not in exclude_cols]
     scale_cols = [c for c in all_num_cols if c != "has_news"]
@@ -201,7 +186,6 @@ def run_walk_forward(
         ws = config['window_size']
         fh = config['forecast_horizon']
         
-        # Dataset Creation
         train_ds = FinancialDataset(df_train, window_size=ws, forecast_horizon=fh, 
                                     min_date=split['train'][0], max_date=split['train'][1], use_emb=config["use_emb"])
         
@@ -211,7 +195,6 @@ def run_walk_forward(
         test_ds  = FinancialDataset(df_test,  window_size=ws, forecast_horizon=fh,
                                     min_date=split['test'][0],  max_date=split['test'][1], use_emb=config["use_emb"])
         
-        # DataLoaders
         loader_args = {
             "batch_size": config['batch_size'],
             "num_workers": config["num_workers"],
@@ -224,19 +207,16 @@ def run_walk_forward(
         val_loader   = DataLoader(val_ds,   shuffle=False, **loader_args)
         test_loader  = DataLoader(test_ds,  shuffle=False, **loader_args)
         
-        # --- TRAINING ---
         best_weights_path = train_model_for_year(
             year, train_loader, val_loader, 
             model_type, config, 
             device, models_dir
         )
         
-        # --- INFERENCE ---
         print(f"   >>> Running Inference for {year}...")
         model = get_model_instance(model_type, config, device)
         state_dict = torch.load(best_weights_path)
         
-        # Handle 'torch.compile' artifacts (_orig_mod prefix)
         if any(k.startswith("_orig_mod.") for k in state_dict.keys()):
             new_state_dict = OrderedDict()
             for k, v in state_dict.items():
@@ -250,7 +230,6 @@ def run_walk_forward(
         df_pred = evaluator.predict_fold(test_loader, fold_name=f"{model_type}_{year}")
         all_years_predictions.append(df_pred)
         
-        # Garbage Collection
         del df_train, df_val, df_test, train_ds, val_ds, test_ds, model, train_loader, val_loader, test_loader
         gc.collect()
         torch.cuda.empty_cache()

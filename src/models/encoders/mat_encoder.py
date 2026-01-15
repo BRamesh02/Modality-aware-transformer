@@ -157,9 +157,6 @@ class MATEncoder(nn.Module):
             ]
         )
         
-        # --- Pre-Norm Requirement: Final Normalization ---
-        # Since the last layer outputs x + dropout(sublayer(norm(x))),
-        # the residual stream itself is not normalized at the very end.
         self.norm_final_num = nn.LayerNorm(d_model)
         self.norm_final_text = nn.LayerNorm(d_model)
 

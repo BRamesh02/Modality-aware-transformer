@@ -44,8 +44,6 @@ class MAT(nn.Module):
 
         self.decoder = MATDecoder(d_model, nhead, dec_layers, dropout)
 
-        # --- Target embedding (scalar -> d_model) ---
-        # y_t (1 dim) -> embedding dim D
         self.y_in_proj = nn.Sequential(
             nn.Linear(1, d_model),
             nn.LayerNorm(d_model),
@@ -55,10 +53,8 @@ class MAT(nn.Module):
 
         self.tgt_pos = PositionalEncoding(d_model, dropout)
 
-        # BOS token (start of decoding)
         self.bos = nn.Parameter(torch.zeros(1, 1, d_model))
 
-        # Regression head applied at each horizon step
         self.head = nn.Sequential(
             nn.Linear(d_model, 64),
             nn.GELU(),
@@ -88,7 +84,6 @@ class MAT(nn.Module):
         H = y_hist.size(1)
         assert H == self.H, f"y_hist horizon {H} != forecast_horizon {self.H}"
         
-        # securite 
         if self.use_emb and x_emb is None:
             raise ValueError("MAT(use_emb=True) requires x_emb, got None.")
         mem_num, mem_text = self.encoder(x_num, x_sent, x_emb)  # [B,T,D] each
@@ -134,7 +129,6 @@ class MAT(nn.Module):
             tgt_out = self.decoder(tgt_in, mem_num, mem_text)
             next_y = self.head(tgt_out[:, -1:, :]).squeeze(-1)  # [B,1]
             preds.append(next_y)
-            # just append predicted y for next step
             next_emb = self.y_in_proj(next_y.unsqueeze(-1))
             tgt_tokens = torch.cat([tgt_tokens, next_emb], dim=1)
         return torch.cat(preds, dim=1)

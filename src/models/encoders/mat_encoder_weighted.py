@@ -12,7 +12,6 @@ class MATEncoderLayer(nn.Module):
     def __init__(self, d_model, nhead, dim_feedforward, dropout):
         super().__init__()
 
-        # --- 1. Intra-Modal (Self Attention) ---
         self.self_attn_num = nn.MultiheadAttention(
             d_model, nhead, dropout=dropout, batch_first=True
         )
@@ -22,7 +21,6 @@ class MATEncoderLayer(nn.Module):
         self.norm1_num = nn.LayerNorm(d_model)
         self.norm1_text = nn.LayerNorm(d_model)
 
-        # --- 2. Inter-Modal (Cross Attention) ---
         self.cross_attn_num = nn.MultiheadAttention(
             d_model, nhead, dropout=dropout, batch_first=True
         )
@@ -32,7 +30,6 @@ class MATEncoderLayer(nn.Module):
         self.norm2_num = nn.LayerNorm(d_model)
         self.norm2_text = nn.LayerNorm(d_model)
 
-        # --- 3. Feed Forward ---
         self.ff_num = nn.Sequential(
             nn.Linear(d_model, dim_feedforward),
             nn.GELU(),
@@ -51,8 +48,6 @@ class MATEncoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x_num, x_text):
-        # --- Step 1: Self Attention (Pre-Norm) ---
-        # Normalize input BEFORE attention
         x_n_norm = self.norm1_num(x_num)
         attn_n, _ = self.self_attn_num(x_n_norm, x_n_norm, x_n_norm)
         x_num = x_num + self.dropout(attn_n)
@@ -61,19 +56,15 @@ class MATEncoderLayer(nn.Module):
         attn_t, _ = self.self_attn_text(x_t_norm, x_t_norm, x_t_norm)
         x_text = x_text + self.dropout(attn_t)
 
-        # --- Step 2: Cross Attention (Pre-Norm) ---
         x_n_norm = self.norm2_num(x_num)
         x_t_norm = self.norm2_text(x_text)
 
-        # Num looks at Text
         attn_n_cross, _ = self.cross_attn_num(query=x_n_norm, key=x_t_norm, value=x_t_norm)
         x_num = x_num + self.dropout(attn_n_cross)
 
-        # Text looks at Num
         attn_t_cross, _ = self.cross_attn_text(query=x_t_norm, key=x_n_norm, value=x_n_norm)
         x_text = x_text + self.dropout(attn_t_cross)
 
-        # --- Step 3: Feed Forward (Pre-Norm) ---
         x_n_norm = self.norm3_num(x_num)
         ff_n = self.ff_num(x_n_norm)
         x_num = x_num + self.dropout(ff_n)
@@ -102,13 +93,10 @@ class MATEncoderWeighted(nn.Module):
         
         self.use_emb = use_emb
 
-        # 1. Feature Attention (Returns weights now)
         self.num_feat_attn = FeatureAttention(num_input_dim)
         text_feat_dim = sent_dim + (emb_dim if self.use_emb else 0)
         self.text_feat_attn = FeatureAttention(text_feat_dim)
 
-        # 2. Weight Projectors
-        # Map Feature Weights to d_model for gating
         self.num_weight_proj = nn.Sequential(
             nn.Linear(num_input_dim, d_model),
             nn.Sigmoid(), 
@@ -117,7 +105,6 @@ class MATEncoderWeighted(nn.Module):
              nn.Linear(text_feat_dim, d_model), nn.Sigmoid()
         )
 
-        # 3. Standard Projections
         self.num_proj = nn.Sequential(
             nn.Linear(num_input_dim, d_model),
             nn.LayerNorm(d_model),
@@ -158,7 +145,6 @@ class MATEncoderWeighted(nn.Module):
             ]
         )
         
-        # --- Pre-Norm Requirement: Final Norm ---
         self.norm_final_num = nn.LayerNorm(d_model)
         self.norm_final_text = nn.LayerNorm(d_model)
 
@@ -169,7 +155,6 @@ class MATEncoderWeighted(nn.Module):
         x_emb : [B,T,768]
         return: mem_num [B,T,d_model], mem_text [B,T,d_model]
         """
-        # A. Feature Attention (Capture the Weights)
         t_sent = self.sent_proj(x_sent)
 
         if self.use_emb:
@@ -183,24 +168,18 @@ class MATEncoderWeighted(nn.Module):
         x_num, w_num = self.num_feat_attn(x_num)        
         x_text, w_text = self.text_feat_attn(x_text)    
 
-        # B. Project Input to d_model
         h_num = self.num_proj(x_num)        
         h_text = self.text_proj(x_text)     
 
-        # C. Positional Encoding
         h_num = self.pos_encoder(h_num.transpose(0, 1)).transpose(0, 1)
         h_text = self.pos_encoder(h_text.transpose(0, 1)).transpose(0, 1)
 
-        # D. MAT Processing
         for layer in self.layers:
             h_num, h_text = layer(h_num, h_text)
             
-        # E. Final Normalization (Crucial for Pre-Norm)
-        # Must normalize before applying the gate logic
         h_num = self.norm_final_num(h_num)
         h_text = self.norm_final_text(h_text)
 
-        # F. RE-WEIGHTING (Gating)
         gate_num = self.num_weight_proj(w_num)
         gate_text = self.text_weight_proj(w_text)
 

@@ -32,9 +32,6 @@ class DecoderLayer(nn.Module):
         B, L, D = tgt.shape
         attn_mask = causal_mask(L, device=tgt.device)
 
-        # 1) masked self-attn
-
-        # en pre norm
         z = self.norm0(tgt)
         x, _ = self.self_attn(
             query=z, key=z, value=z,
@@ -43,10 +40,7 @@ class DecoderLayer(nn.Module):
             need_weights=False,
         )
         tgt = tgt + self.drop(x)
-        # tgt = self.norm0(tgt + self.drop(x)) a mettre si on veut se mettre en post norm 
-        # et s'aligner avec MAT penser à le faire avec encoder aussi dans ce cas norm_first=False
 
-        # 2) cross-attn
         z = self.norm1(tgt)
         x, _ = self.cross_attn(
             query=z, key=memory, value=memory,
@@ -54,13 +48,10 @@ class DecoderLayer(nn.Module):
             need_weights=False,
         )
         tgt = tgt + self.drop(x)
-        # tgt = self.norm1(tgt + self.drop(x))
 
-        # 3) FFN
         z = self.norm2(tgt)
         x = self.ff(z)
         tgt = tgt + self.drop(x)
-        # tgt = self.norm2(tgt + self.drop(x))
         return tgt
 
 

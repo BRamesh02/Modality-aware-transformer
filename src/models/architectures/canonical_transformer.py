@@ -31,7 +31,6 @@ class CanonicalTransformer(nn.Module):
             nn.Dropout(dropout),
         )
 
-        # BOS token
         self.bos = nn.Parameter(torch.zeros(1, 1, d_model))
 
         self.tgt_pos = PositionalEncoding(d_model, dropout)
@@ -64,7 +63,6 @@ class CanonicalTransformer(nn.Module):
         y_emb = self.y_in_proj(y_hist.unsqueeze(-1))          # [B,H,D]
         tgt_tokens = torch.cat([self.bos.expand(B, 1, -1), y_emb], dim=1)  # [B,H+1,D]
 
-        # positional encoding sur tgt
         tgt_in = self.tgt_pos(tgt_tokens.transpose(0, 1)).transpose(0, 1)  # [B,H+1,D]
 
         tgt_out = self.decoder(tgt_in, memory)              # [B,H+1,D]
@@ -83,7 +81,6 @@ class CanonicalTransformer(nn.Module):
             raise ValueError("CanonicalTransformer(use_emb=True) requires x_emb, got None.")
         memory = self.encoder(x_num, x_sent, x_emb)
 
-        # on démarre avec [BOS, y_t]
         tgt_tokens = torch.cat(
             [self.bos.expand(B, 1, -1), self.y_in_proj(y0.view(B, 1, 1))],
             dim=1

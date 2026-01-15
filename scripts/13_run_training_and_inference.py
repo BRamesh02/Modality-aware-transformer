@@ -1,5 +1,7 @@
 import sys
 import os
+import warnings
+import logging
 import random
 import numpy as np
 import torch
@@ -13,6 +15,21 @@ sys.path.append(str(PROJECT_ROOT))
 from src.models.config import CONFIG
 from src.utils.data_loader import load_and_merge_data
 from src.training.runner import run_walk_forward
+
+# SILENCE COMPILER LOGS
+# Suppress Python Warnings (UserWarning, FutureWarning) from PyTorch internal modules
+warnings.filterwarnings("ignore", category=UserWarning, module="torch._inductor")
+warnings.filterwarnings("ignore", category=UserWarning, module="torch.backends.cuda")
+warnings.filterwarnings("ignore", category=UserWarning, module="torch.nn.modules.transformer")
+warnings.filterwarnings("ignore", category=FutureWarning, module="torch.amp")
+
+# Suppress Low-Level Torch Compile/Inductor Debug Info
+os.environ["TORCH_LOGS"] = "-all"             # Disable all torch.compile logs
+os.environ["TORCH_COMPILE_DEBUG"] = "0"       # Disable debug artifacts
+os.environ["TORCH_CPP_LOG_LEVEL"] = "ERROR"   # Only show C++ errors, no info/warnings
+
+# Suppress standard logging libraries if they leak through
+logging.getLogger("torch._inductor").setLevel(logging.ERROR)
 
 def seed_everything(seed=42):
     """

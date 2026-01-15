@@ -40,7 +40,6 @@ class MATDecoderLayer(nn.Module):
         )
 
         # Fuse (Q_tar, ctx_num, ctx_text) -> d_model
-        # Paper doesn't necessarily specify concat+linear
         self.fuse = nn.Sequential(
             nn.Linear(3 * d_model, d_model),
             nn.GELU(),
@@ -73,7 +72,7 @@ class MATDecoderLayer(nn.Module):
         device = tgt.device
 
         # Sub-layer 1: Masked MHA on target sequence (Eq. 3.17-3.19)
-        attn_mask = causal_mask(H, device=device)  # prevents attending to future steps
+        attn_mask = causal_mask(H, device=device)
         tgt_ctx, _ = self.self_attn_tar(
             query=tgt, key=tgt, value=tgt,
             attn_mask=attn_mask,
