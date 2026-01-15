@@ -5,10 +5,10 @@ CONFIG = {
     "train_years": 5,
     "val_years": 1,
     "test_years":1,
-    'window_size': 60,       # Input lookback (T)x
-    'forecast_horizon': 1,   # Prediction target (H)
-    'num_input_dim': 22,             # Number of sentiment features
-    'sent_input_dim': 5,             # Number of sentiment features
+    'window_size': 60,       # Input lookback
+    'forecast_horizon': 1,   
+    'num_input_dim': 22,     # Number of numerical features
+    'sent_input_dim': 5,     # Number of sentiment features
     'use_emb': True,         # Use text embeddings (768 dim)
     
     # DataLoader Optimization
@@ -20,7 +20,7 @@ CONFIG = {
     'epochs': 20,
     'patience': 5,           # Early stopping patience
     'batch_size': 4096,      # Optimized for A100
-    "criterions": "MAE",     # MAE or weighted_MSE
+    "criterion": "MAE",     # MAE or weighted_MSE
     "MSE_weight": 10,
     'learning_rate': 5e-4,
     "weight_decay": 1e-4,
