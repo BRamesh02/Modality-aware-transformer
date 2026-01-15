@@ -1,98 +1,90 @@
-
-
 CONFIG = {
     # ==========================================
-    # 1. DATA & SPLIT CONFIGURATION
+    # 1. DATA & SPLIT (The Timeline)
     # ==========================================
-    # The absolute start and end dates for the entire dataset processing.
     "start_date": "2010-01-01",
     "end_date": "2023-12-15",
     
-    # Walk-Forward Validation parameters (Sliding Window logic).
-    # Train on 5 years -> Validate on 1 year -> Test on 1 year.
+    # 5-1-1 Walk-Forward Split. 
+    # This simulates retraining the model every year to adapt to regime changes.
     "train_years": 5,
     "val_years": 1,
     "test_years": 1,
 
     # ==========================================
-    # 2. MODEL INPUT SHAPES
+    # 2. MODEL INPUTS
     # ==========================================
-    # How many past days the model sees (T). 60 days is approx. 1 trading quarter.
+    # Lookback window: 60 trading days (~3 months). Standard for catching quarterly trends.
     "window_size": 60,       
     
-    # How many days into the future to predict (H). 1 = Next Day Return.
-    "forecast_horizon": 5,
+    # Prediction: The model outputs a curve of 10 days (T+1 to T+10).
+    "forecast_horizon": 10,
+    
+    # Whivh horizon is focused by predictions evaluation
     "primary_eval_horizon": 1,   
+    # Controls Early Stopping.
+    "validation_horizon": 5,
     
-    # Number of scalar features per day (Price, Volatility, PE ratio, etc.).
+    # Feature counts (Must match your CSV columns exactly).
     "num_input_dim": 22,     
-    
-    # Number of sentiment features (e.g., Positive, Negative, Neutral scores).
     "sent_input_dim": 5,     
     
-    # If True, includes the 768-dimensional BERT embeddings in the model input.
-    # Setting to False significantly reduces VRAM usage but loses semantic news info.
+    # Multimodality Switch.
+    # True = Uses BERT embeddings (Heavy VRAM usage, Richer Signal). 
+    # False = Scalar Sentiment scores only (Faster, lighter).
     "use_emb": True,         
 
     # ==========================================
-    # 3. DATALOADER OPTIMIZATION (HARDWARE)
+    # 3. HARDWARE TUNING
     # ==========================================
-    # Number of CPU sub-processes used to load data. 
     "num_workers": 4,        
     
-    # If True, locks data in RAM for faster transfer to GPU. 
-    # Set to False if you run out of System RAM (RAM crash), otherwise True is faster.
+    # RAM Locking. Essential for fast CPU->GPU transfer. Keep True.
     "pin_memory": True,     
     
-    # If True, keeps worker threads alive between epochs. 
-    # Reduces the "pause" at the start of every new epoch.
+    # Keep workers alive. Prevents "spool up" lag at the start of every epoch.
     "persistent_workers": True,
     
-    # Number of batches loaded in advance by each worker. 
-    # Helps prevent the GPU from waiting for the CPU (prevents starvation).
-    "prefetch_factor": 2,
+    # Buffer size. 4 batches waiting on deck to ensure GPU never idles.
+    "prefetch_factor": 4,
 
     # ==========================================
-    # 4. TRAINING HYPERPARAMETERS
+    # 4. TRAINING DYNAMICS
     # ==========================================
-    # Maximum number of passes through the training data.
     "epochs": 20,
     
-    # Early Stopping: Stop training if Validation Loss doesn't improve for this many epochs.
+    # Stop if IC (Correlation) doesn't improve for 5 epochs.
     "patience": 5,           
     
-    # Number of samples per gradient update. 
-    # 4096 is optimized for A100/High-VRAM GPUs. Reduce to 1024 or 512 for smaller GPUs.
     "batch_size": 16384,      
     
-    # Loss Function: "MAE" (L1Loss) is robust to outliers. 
-    # "weighted_MSE" penalizes errors on high-volatility days more heavily.
-    "criterion": "MAE",     
-    
-    # Only used if criterion == "weighted_MSE". 
-    # Controls how much extra penalty is applied to large errors.
+    # The Optimizer's Goal (HuberLoss, MAE, weighted_MSE). 
+    "criterion": "HuberLoss",     
+    "HuberLoss_delta": 1.0, # (Normalized Z-score 1.0 = 1 Standard Deviation)
+    # If criterion is weighted_MSE.
     "MSE_weight": 10,
-    
-    # Peak Learning Rate for the OneCycleLR scheduler.
+
+    # Learning Rate Strategy.
     "learning_rate": 7e-4,
     
-    # L2 Regularization penalty. Helps prevent overfitting by keeping weights small.
+    # Regularization. 1e-4 prevents weights from growing too large.
     "weight_decay": 1e-4,
     
+    # Warmup. First 10% of training ramps up LR (stabilizes gradients).
+    "pct_start": 0.1,
+    
     # ==========================================
-    # 5. TRANSFORMER ARCHITECTURE
+    # 5. ARCHITECTURE (The Size)
     # ==========================================
-    # The internal dimension size of the Transformer (Hidden Size).
-    # Larger = Smarter but slower and more prone to overfitting.
+    # Model Width
     "d_model": 128,
     
-    # Number of Attention Heads. Allows the model to focus on different parts of the sequence.
-    # d_model must be divisible by nhead (128 / 4 = 32).
+    # Parallel Attention heads.
     "nhead": 4,
     
-    # Number of stacked Transformer Encoder/Decoder layers.
+    # Depth.
     "n_layers": 2,         
     
-    # Dropout probability (0.1 = 10% of neurons turned off randomly during training).
-    "dropout": 0.1
+    # Noise injection. 0.2 drops 20% of connections to force robust learning.
+    "dropout": 0.2
 }
