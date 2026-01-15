@@ -5,87 +5,65 @@ import numpy as np
 
 class FinancialDataset(Dataset):
     def __init__(self, df: pd.DataFrame, window_size: int = 60, min_date=None, max_date=None, forecast_horizon=1, use_emb: bool = True):
-        """
-        Args:
-            df: DataFrame containing Features + Context Buffer (past data).
-            min_date: (str) The earliest date allowed for a TARGET. 
-                      Windows ending before this are discarded (used only for context).
-            max_date: (str) The latest date allowed for a TARGET.
-        """
         self.window_size = window_size
         self.H = forecast_horizon
         self.use_emb = use_emb
         
+        # Sort is critical for the "t-1" indexing to work
         self.df = df.sort_values(["permno", "date"]).reset_index(drop=True)
 
-        exclude_cols = [
-            "date", "permno", "target", "emb_mean", 
-            "sent_score_mean", "sent_pos_mean", "sent_neg_mean", 
-            "sent_score_std", "log_n_news",
-        ]
+        # Columns Setup
+        exclude_cols = ["date", "permno", "target", "emb_mean", "sent_score_mean", "sent_pos_mean", "sent_neg_mean", "sent_score_std", "log_n_news"]
         self.num_cols = [c for c in self.df.columns if c not in exclude_cols]
         self.text_scalar_cols = ["sent_score_mean", "sent_pos_mean", "sent_neg_mean", "sent_score_std", "log_n_news"]
         
-        print(f"Numerical Features ({len(self.num_cols)}): {self.num_cols}")
-        print(f"Text scalar features ({len(self.text_scalar_cols)}): {self.text_scalar_cols}")
-        print(f"Use embeddings: {self.use_emb}")
-
-        print("Converting to PyTorch Tensors...")
-
+        # Convert to Tensors
         self.data_num = torch.tensor(self.df[self.num_cols].values.astype(np.float32))
-        
-        # if "emb_mean" in self.df.columns:
-        #     emb_values = np.stack(self.df["emb_mean"].values).astype(np.float32)
-        # else:
-        #     emb_values = np.zeros((len(self.df), 768), dtype=np.float32)
-        #  a fallback tensor so DataLoader can collate
-        self.zero_emb = torch.zeros((window_size, 768), dtype=torch.float32)
-        self.data_emb = None
-        if self.use_emb:
-            if "emb_mean" in self.df.columns:
-                emb_values = np.stack(self.df["emb_mean"].values).astype(np.float32)
-            else:
-                emb_values = np.zeros((len(self.df), 768), dtype=np.float32)
-        # Embeddings: [N, 768]
-            self.data_emb = torch.tensor(emb_values)  # float32
-        # scalar_values = self.df[self.text_scalar_cols].values.astype(np.float32)
-        # self.data_text = torch.tensor(np.concatenate([emb_values, scalar_values], axis=1))
-        # self.data_target = torch.tensor(self.df["target"].values.astype(np.float32))
-
-        # Embeddings: [N, 768]
-        #self.data_emb = torch.tensor(emb_values)  # already float32
-
-        # Sentiment scalars: [N, n_sent]
-        sent_values = self.df[self.text_scalar_cols].values.astype(np.float32)
-        self.data_sent = torch.tensor(sent_values)
-
+        self.data_sent = torch.tensor(self.df[self.text_scalar_cols].values.astype(np.float32))
         self.data_target = torch.tensor(self.df["target"].values.astype(np.float32))
-
-        dates = pd.to_datetime(self.df['date'])
         
+        # Embeddings
+        self.data_emb = None
+        self.zero_emb = torch.zeros((window_size, 768), dtype=torch.float32)
+        if self.use_emb and "emb_mean" in self.df.columns:
+            emb_values = np.stack(self.df["emb_mean"].values).astype(np.float32)
+            self.data_emb = torch.tensor(emb_values)
+
+        # --- Valid Index Discovery ---
+        # We need to find valid windows that don't cross stock boundaries
+        dates = pd.to_datetime(self.df['date'])
         min_ts = pd.Timestamp(min_date) if min_date else dates.min()
         max_ts = pd.Timestamp(max_date) if max_date else dates.max()
 
         self.indices = []
         permnos = self.df['permno'].values
+        
+        # Identify where stocks change to avoid mixing data
         change_points = np.where(permnos[:-1] != permnos[1:])[0] + 1
         start_points = np.concatenate(([0], change_points))
         end_points = np.concatenate((change_points, [len(permnos)]))
         
         for start, end in zip(start_points, end_points):
-            n_rows = end - start
-            if n_rows > window_size+self.H-1:
-                # Potential start indices
-                # Input Window: [i : i+60]
-                # Target Index: i+60-1 (The last day of the window)
-                # valid_starts = range(start, end - window_size + 1)
-                valid_starts = range(start+1, end - (window_size+self.H -1)+1)
+            # To predict H steps ahead, we need safe indices up to i + T + H
+            # Valid start indices `i`:
+            valid_starts = range(start, end - (self.window_size + self.H))
+            
+            for i in valid_starts:
+                # `t` is the index of the last input day (The "Forecast Date")
+                t = i + self.window_size - 1
                 
-                for i in valid_starts:
-                    #target_date = dates[i + window_size - 1]
-                    target_date = dates[i + window_size + self.H - 2]
-                    if min_ts <= target_date <= max_ts:
-                        self.indices.append(i)
+                # Check if the TARGET date (t+1, which is at index `t` in your shifted logic) 
+                # falls within the requested range.
+                # Note: dates[t] is the date of row `t`. Since row `t` holds target t+1, 
+                # checking dates[t] is effectively checking the date of the target?
+                # Actually, usually 'date' col is the input date.
+                # If date col is t, and target is t+1, we want to filter by the date of the target.
+                # Let's trust dates[t] is the "Forecast Date" and we filter by that.
+                
+                current_date = dates[t]
+                # Logic: We only want predictions where the FORECAST DATE is within range
+                if min_ts <= current_date <= max_ts:
+                    self.indices.append(i)
 
         print(f"Dataset Ready. Samples: {len(self.indices)} (Filtered by {min_date} to {max_date})")
 
@@ -97,42 +75,40 @@ class FinancialDataset(Dataset):
         T = self.window_size
         H = self.H
         
-        x_num = self.data_num[i : i + T]    # [T, F]
-        # x_text = self.data_text[i : i + self.window_size]
-        x_sent = self.data_sent[i : i + T]  # [T, 5]
-        # x_emb  = self.data_emb[i : i + T]   # [T, 768]
-        # y = self.data_target[i + self.window_size - 1]
-        x_emb = None
+        # 1. Inputs (Indices i to i+T)
+        x_num = self.data_num[i : i + T]
+        x_sent = self.data_sent[i : i + T]
+        
+        x_emb = self.zero_emb
         if self.data_emb is not None:
-            x_emb = self.data_emb[i : i + T]  # [T,768]
-        else:
-            x_emb = self.zero_emb              # [T,768] zeros
+            x_emb = self.data_emb[i : i + T]
 
-        # Time index
-        t = i + T - 1                              # dernier jour connu dans la fenêtre
-        # y_future = ce que tu veux prédire (H pas dans le futur)
-        y_future = self.data_target[t : t + H]   # [H] = y_{t+1}..y_{t+H}
+        # 2. Targets & History
+        # t is the index of the last input day
+        t = i + T - 1
+        
+        # y_future: The ground truth targets.
+        # Since df['target'] at row `t` is Return_{t+1}, we start at `t`.
+        y_future = self.data_target[t : t + H]
 
-        # y_hist = ce que tu donnes au decoder (teacher forcing)
-        # [y_t, y_{t+1}, ..., y_{t+H-1}] (shift d'un pas)
-        y_hist = self.data_target[t - 1 : t - 1 + H]    # [H] = r_t..r_{t+H-1}
+        # y_hist: The past returns for the decoder.
+        # We need Return_{t}. Since df['target'] at `t-1` is Return_{t}, we start at `t-1`.
+        y_hist = self.data_target[t - 1 : t - 1 + H]
         
-        # Metadata for evaluation
-        date_val = str(self.df.iloc[i + T + H - 2]['date'])
-        permno_val = int(self.df.iloc[i]['permno'])
+        # 3. Metadata
+        # We explicitly grab the "Forecast Date" (Date at row t)
+        date_forecast = str(self.df.iloc[t]['date'])
+        permno_val = int(self.df.iloc[i]['permno']) 
         
-        # return {"x_num": x_num, "x_text": x_text, "y": y}
-        # return {"x_num": x_num, "x_sent": x_sent, "x_emb": x_emb, "y": y}
         return {
             "x_num": x_num,
             "x_sent": x_sent,
             "x_emb": x_emb,
             "y_hist": y_hist,      
             "y_future": y_future,
-            "date": date_val,
+            "date_forecast": date_forecast,
             "permno": permno_val,
         }
-
 
 def get_annual_splits(df, start_year=2010, end_year=None, train_years=5, val_years=1, test_years=1):
     """

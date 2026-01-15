@@ -12,20 +12,17 @@ def train_epoch(model, dataloader, optimizer, criterion, device):
     progress_bar = tqdm(dataloader, desc="Training", leave=False)
 
     for batch in progress_bar:
-        # --- mandatory inputs ---
         x_num  = batch["x_num"].to(device)
         x_sent = batch["x_sent"].to(device)
         y_hist = batch["y_hist"].to(device)
         y_target = batch["y_future"].to(device)
 
-        # --- optional embeddings ---
         x_emb = batch["x_emb"]
         if x_emb is not None:
             x_emb = x_emb.to(device)
 
         optimizer.zero_grad()
 
-        # forward (x_emb may be None)
         preds = model(x_num, x_sent, x_emb, y_hist)
 
         loss = criterion(preds, y_target)
@@ -50,13 +47,11 @@ def validate_epoch(model, dataloader, criterion, device):
 
     with torch.no_grad():
         for batch in dataloader:
-            # --- mandatory inputs ---
             x_num  = batch["x_num"].to(device)
             x_sent = batch["x_sent"].to(device)
             y_hist = batch["y_hist"].to(device)
             y_target = batch["y_future"].to(device)
 
-            # --- optional embeddings ---
             x_emb = batch["x_emb"]
             if x_emb is not None:
                 x_emb = x_emb.to(device)
