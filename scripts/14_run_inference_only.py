@@ -62,7 +62,15 @@ def run_pure_inference(df_main:pd.DataFrame, model_type:str, config:dict):
             use_emb=config["use_emb"]
         )
         
-        test_loader = DataLoader(test_ds, batch_size=config['batch_size'], shuffle=False, num_workers=config["num_workers"], pin_memory=config["pin_memory"], persistent_workers=config["persistent_workers"])
+        test_loader = DataLoader(
+            test_ds,
+            batch_size=config['batch_size'],
+            shuffle=False,
+            num_workers=config["num_workers"],
+            pin_memory=config["pin_memory"],
+            persistent_workers=config["persistent_workers"],
+            prefetch_factor=config["prefetch_factor"]
+            )
         
         model = get_model_instance(model_type, CONFIG, device)
         model.load_state_dict(torch.load(weights_path))

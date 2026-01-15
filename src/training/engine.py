@@ -1,31 +1,34 @@
 import torch
 from tqdm import tqdm
 
-def train_epoch(model, dataloader, optimizer, criterion, device, scheduler=None):
+def train_epoch(model, model_config:dict, dataloader, optimizer, criterion, device, scheduler=None):
     """
-    Generic training loop for both Canonical and MAT models.
-    Supports optional text embeddings (x_emb can be None).
+    Generic training loop optimized for A100 (BF16 Mixed Precision).
     """
     model.train()
     total_loss = 0.0
+    
+    use_amp = (device == 'cuda')
+    dtype = torch.bfloat16 if (use_amp and torch.cuda.is_bf16_supported()) else torch.float16
 
     progress_bar = tqdm(dataloader, desc="Training", leave=False)
 
     for batch in progress_bar:
-        x_num  = batch["x_num"].to(device)
-        x_sent = batch["x_sent"].to(device)
-        y_hist = batch["y_hist"].to(device)
-        y_target = batch["y_future"].to(device)
+        x_num  = batch["x_num"].to(device, non_blocking=model_config["pin_memory"])
+        x_sent = batch["x_sent"].to(device, non_blocking=model_config["pin_memory"])
+        y_hist = batch["y_hist"].to(device, non_blocking=model_config["pin_memory"])
+        y_target = batch["y_future"].to(device, non_blocking=model_config["pin_memory"])
 
         x_emb = batch["x_emb"]
         if x_emb is not None:
-            x_emb = x_emb.to(device)
+            x_emb = x_emb.to(device, non_blocking=True)
 
-        optimizer.zero_grad()
+        optimizer.zero_grad(set_to_none=True)
 
-        preds = model(x_num, x_sent, x_emb, y_hist)
+        with torch.autocast(device_type='cuda', dtype=dtype, enabled=use_amp):
+            preds = model(x_num, x_sent, x_emb, y_hist)
+            loss = criterion(preds, y_target)
 
-        loss = criterion(preds, y_target)
         loss.backward()
 
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -40,27 +43,30 @@ def train_epoch(model, dataloader, optimizer, criterion, device, scheduler=None)
     return total_loss / len(dataloader)
 
 
-def validate_epoch(model, dataloader, criterion, device):
+def validate_epoch(model, model_config:dict, dataloader, criterion, device):
     """
-    Generic validation loop (no gradients).
-    Supports optional text embeddings (x_emb can be None).
+    Validation loop using Mixed Precision for faster inference.
     """
     model.eval()
     total_loss = 0.0
+    
+    use_amp = (device == 'cuda')
+    dtype = torch.bfloat16 if (use_amp and torch.cuda.is_bf16_supported()) else torch.float16
 
     with torch.no_grad():
         for batch in dataloader:
-            x_num  = batch["x_num"].to(device)
-            x_sent = batch["x_sent"].to(device)
-            y_hist = batch["y_hist"].to(device)
-            y_target = batch["y_future"].to(device)
+            x_num  = batch["x_num"].to(device, non_blocking=model_config["pin_memory"])
+            x_sent = batch["x_sent"].to(device, non_blocking=model_config["pin_memory"])
+            y_hist = batch["y_hist"].to(device, non_blocking=model_config["pin_memory"])
+            y_target = batch["y_future"].to(device, non_blocking=model_config["pin_memory"])
 
             x_emb = batch["x_emb"]
             if x_emb is not None:
-                x_emb = x_emb.to(device)
+                x_emb = x_emb.to(device, non_blocking=True)
 
-            preds = model(x_num, x_sent, x_emb, y_hist)
-            loss = criterion(preds, y_target)
+            with torch.autocast(device_type='cuda', dtype=dtype, enabled=use_amp):
+                preds = model(x_num, x_sent, x_emb, y_hist)
+                loss = criterion(preds, y_target)
 
             total_loss += loss.item()
 

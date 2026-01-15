@@ -59,6 +59,7 @@ def train_model_for_year(
     print(f"Training {model_type} for Test Year: {year}...")
     
     model = get_model_instance(model_type, model_config, device)
+    model = torch.compile(model, mode="max-autotune")
     
     optimizer = optim.AdamW(model.parameters(), lr=model_config["learning_rate"], weight_decay=model_config["weight_decay"])
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
@@ -81,9 +82,12 @@ def train_model_for_year(
     
     EPOCHS = model_config["epochs"]
     for epoch in range(EPOCHS):
-        t_loss = train_epoch(model, train_loader, optimizer, criterion, device, scheduler)
-        v_loss = validate_epoch(model, val_loader, criterion, device)
+        t_loss = train_epoch(model, model_config, train_loader, optimizer, criterion, device, scheduler)
+        v_loss = validate_epoch(model, model_config, val_loader, criterion, device)
 
+        current_lr = scheduler.get_last_lr()[0]
+        print(f"   Epoch {epoch+1}/{EPOCHS} | Train: {t_loss:.6f} | Val: {v_loss:.6f} | LR: {current_lr:.2e}")
+        
         early_stopping(v_loss, model)
         if early_stopping.early_stop:
             print(f"      [Early Stopping] Epoch {epoch+1} - Val Loss: {v_loss:.6f}")
@@ -153,9 +157,33 @@ def run_walk_forward(
                                     min_date=split['test'][0],  max_date=split['test'][1], use_emb=config["use_emb"])
         
         bs = config['batch_size']
-        train_loader = DataLoader(train_ds, batch_size=bs, shuffle=True,  num_workers=config["num_workers"], pin_memory=config["pin_memory"], persistent_workers=config["persistent_workers"])
-        val_loader   = DataLoader(val_ds,   batch_size=bs, shuffle=False, num_workers=config["num_workers"], pin_memory=config["pin_memory"], persistent_workers=config["persistent_workers"])
-        test_loader  = DataLoader(test_ds,  batch_size=bs, shuffle=False, num_workers=config["num_workers"], pin_memory=config["pin_memory"], persistent_workers=config["persistent_workers"])
+        train_loader = DataLoader(
+            train_ds,
+            batch_size=bs,
+            shuffle=True,
+            num_workers=config["num_workers"],
+            pin_memory=config["pin_memory"],
+            persistent_workers=config["persistent_workers"],
+            prefetch_factor=config["prefetch_factor"]
+            )
+        val_loader   = DataLoader(
+            val_ds,
+            batch_size=bs,
+            shuffle=False,
+            num_workers=config["num_workers"],
+            pin_memory=config["pin_memory"],
+            persistent_workers=config["persistent_workers"],
+            prefetch_factor=config["prefetch_factor"]
+            )
+        test_loader  = DataLoader(
+            test_ds,
+            batch_size=bs,
+            shuffle=False,
+            num_workers=config["num_workers"],
+            pin_memory=config["pin_memory"],
+            persistent_workers=config["persistent_workers"],
+            prefetch_factor=config["prefetch_factor"]
+            )
         
         best_weights_path = train_model_for_year(
             year, train_loader, val_loader, 
