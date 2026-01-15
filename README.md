@@ -32,94 +32,124 @@ This project:
 	-	Evaluates performance on financial return prediction tasks
 
 ---
-
 ## Repository Structure
 
-<details>
-<summary><strong> Full repository structure</strong></summary>
+### Global overview
 
 ```text
 Modality-aware-transformer/
 ├─ README.md                      # Project overview, structure, and usage
 ├─ requirements.txt               # Python dependencies
 ├─ data/
-│  ├─ raw/                         # Raw inputs (WRDS, Wikipedia, FNSPID, etc.)
-│  └─ processed/                   # Processed numerical/text features
 ├─ notebooks/
-│  ├─ debug.ipynb                  # Debugging and quick checks
-│  ├─ test_model.ipynb             # End-to-end model testing notebook
-│  └─ text_data.ipynb              # Text data exploration and preprocessing
 ├─ scripts/
-│  ├─ 01_build_universe.py         # Build asset universe and identifiers
-│  ├─ 02_build_market_features.py  # Generate market-level numerical features
-│  ├─ 03_build_ratio_features.py   # Generate accounting ratio features
-│  ├─ 04_build_macro_features.py   # Generate macroeconomic features
-│  ├─ 05_build_target.py           # Build prediction targets
-│  ├─ 06_build_returns.py          # Compute returns series
-│  ├─ 07_build_factors.py          # Compute factor features
-│  ├─ 08_raw_text_data.py          # Collect raw text data
-│  ├─ 09_clean_text_data.py        # Clean and normalize text data
-│  ├─ 10_build_text_features_stock.py # Build stock-level text features
-│  ├─ 11_link_tickers.py           # Link tickers to identifiers across sources
-│  ├─ 12_gather_data_from_drive.py # Gather data artifacts from shared drive
-│  ├─ 13_run_training_and_inference.py # Train and run inference end-to-end
-│  ├─ 14_run_inference_only.py     # Run inference with a trained model
-│  └─ 15_run_predictions_evaluation.py # Evaluate predictions and generate plots
 └─ src/
-   ├─ evaluation/
-   │  ├─ predictions/
-   │  │  ├─ compare.py             # Compare model predictions
-   │  │  ├─ evaluator.py           # Walk-forward evaluation utilities
-   │  │  ├─ inference.py           # Prediction/inference utilities
-   │  │  ├─ metrics.py             # Prediction metrics
-   │  │  └─ plots.py               # Prediction plots
-   │  └─ portfolio/
-   │     ├─ attribution.py         # Performance attribution metrics
-   │     ├─ backtest.py            # Portfolio backtesting logic
-   │     ├─ performance.py         # Return and risk metrics
-   │     └─ robustness.py          # Robustness checks and stress tests
-   ├─ fnspid/
-   │  ├─ bert_features.py          # BERT-based feature extraction
-   │  ├─ linking.py                # Text-to-identifier linking helpers
-   │  ├─ store_data.py             # Data storage routines
-   │  └─ text_functions.py         # Text preprocessing utilities
-   ├─ models/
-   │  ├─ architectures/
-   │  │  ├─ canonical_transformer.py # Baseline transformer architecture
-   │  │  └─ mat.py                  # Modality-Aware Transformer architecture
-   │  ├─ decoders/
-   │  │  ├─ canonical_decoder.py    # Baseline decoder
-   │  │  └─ mat_decoder.py          # MAT decoder
-   │  ├─ encoders/
-   │  │  ├─ canonical_encoder.py    # Baseline encoder
-   │  │  ├─ mat_encoder.py          # MAT encoder
-   │  │  └─ mat_encoder_weighted.py # MAT encoder with modality weighting
-   │  ├─ layers/
-   │  │  ├─ feature_attention.py    # Feature-level attention layers
-   │  │  ├─ masks.py                # Attention mask utilities
-   │  │  └─ positional_encoding.py  # Positional encoding layers
-   │  ├─ config.py                  # Model configuration defaults
-   │  └─ dataset.py                 # Dataset and dataloader definitions
-   ├─ numerical_data/
-   │  ├─ factors.py                 # Factor construction logic
-   │  ├─ features_macro.py          # Macro features computation
-   │  ├─ features_market.py         # Market features computation
-   │  ├─ features_ratios.py         # Ratio features computation
-   │  ├─ fred_client.py             # FRED data client
-   │  ├─ target.py                  # Target construction
-   │  ├─ universe.py                # Universe selection logic
-   │  └─ wrds_client.py             # WRDS data client
-   ├─ training/
-   │  ├─ callbacks.py               # Training callbacks and logging
-   │  ├─ engine.py                  # Training/evaluation engine
-   │  ├─ losses.py                  # Training loss functions
-   │  └─ runner.py                  # Training runner/orchestration
-   └─ utils/
-      ├─ data_loader.py             # Shared data loading utilities
-      └─ drive_downloads.py         # Drive download helpers
 ```
-
+<details>
+<summary><strong>data/</strong> — raw & processed datasets</summary>
+```text
+data/
+├─ raw/                         # Raw inputs (WRDS, Wikipedia, FNSPID, etc.)
+└─ processed/                   # Processed numerical/text features
+```
 </details>
+
+<details>
+<summary><strong>notebooks/</strong> — exploration & debugging</summary>
+```text
+notebooks/
+├─ debug.ipynb                  # Debugging and quick checks
+├─ test_model.ipynb             # End-to-end model testing notebook
+└─ text_data.ipynb              # Text data exploration and preprocessing
+```
+</details>
+
+<details>
+<summary><strong>scripts/</strong> — data pipeline & execution</summary>
+```text
+scripts/
+├─ 01_build_universe.py                # Build asset universe and identifiers
+├─ 02_build_market_features.py         # Generate market-level numerical features
+├─ 03_build_ratio_features.py          # Generate accounting ratio features
+├─ 04_build_macro_features.py          # Generate macroeconomic features
+├─ 05_build_target.py                  # Build prediction targets
+├─ 06_build_returns.py                 # Compute returns series
+├─ 07_build_factors.py                 # Compute factor features
+├─ 08_raw_text_data.py                 # Collect raw text data
+├─ 09_clean_text_data.py               # Clean and normalize text data
+├─ 10_build_text_features_stock.py     # Build stock-level text features
+├─ 11_link_tickers.py                  # Link tickers to identifiers across sources
+├─ 12_gather_data_from_drive.py        # Gather data artifacts from shared drive
+├─ 13_run_training_and_inference.py    # Train and run inference end-to-end
+├─ 14_run_inference_only.py            # Run inference with a trained model
+└─ 15_run_predictions_evaluation.py    # Evaluate predictions and generate plots
+```
+</details>
+
+<details>
+<summary><strong>src/</strong> — core library</summary>
+```text
+src/
+├─ evaluation/
+│  ├─ predictions/
+│  │  ├─ compare.py             # Compare model predictions
+│  │  ├─ evaluator.py           # Walk-forward evaluation utilities
+│  │  ├─ inference.py           # Prediction/inference utilities
+│  │  ├─ metrics.py             # Prediction metrics
+│  │  └─ plots.py               # Prediction plots
+│  └─ portfolio/
+│     ├─ attribution.py         # Performance attribution metrics
+│     ├─ backtest.py            # Portfolio backtesting logic
+│     ├─ performance.py         # Return and risk metrics
+│     └─ robustness.py          # Robustness checks and stress tests
+│
+├─ fnspid/
+│  ├─ bert_features.py          # BERT-based feature extraction
+│  ├─ linking.py                # Text-to-identifier linking helpers
+│  ├─ store_data.py             # Data storage routines
+│  └─ text_functions.py         # Text preprocessing utilities
+│
+├─ models/
+│  ├─ architectures/
+│  │  ├─ canonical_transformer.py # Baseline transformer architecture
+│  │  └─ mat.py                  # Modality-Aware Transformer architecture
+│  ├─ decoders/
+│  │  ├─ canonical_decoder.py    # Baseline decoder
+│  │  └─ mat_decoder.py          # MAT decoder
+│  ├─ encoders/
+│  │  ├─ canonical_encoder.py    # Baseline encoder
+│  │  ├─ mat_encoder.py          # MAT encoder
+│  │  └─ mat_encoder_weighted.py # MAT encoder with modality weighting
+│  ├─ layers/
+│  │  ├─ feature_attention.py    # Feature-level attention layers
+│  │  ├─ masks.py                # Attention mask utilities
+│  │  └─ positional_encoding.py  # Positional encoding layers
+│  ├─ config.py                  # Model configuration defaults
+│  └─ dataset.py                 # Dataset and dataloader definitions
+│
+├─ numerical_data/
+│  ├─ factors.py                 # Factor construction logic
+│  ├─ features_macro.py          # Macro features computation
+│  ├─ features_market.py         # Market features computation
+│  ├─ features_ratios.py         # Ratio features computation
+│  ├─ fred_client.py             # FRED data client
+│  ├─ target.py                  # Target construction
+│  ├─ universe.py                # Universe selection logic
+│  └─ wrds_client.py             # WRDS data client
+│
+├─ training/
+│  ├─ callbacks.py               # Training callbacks and logging
+│  ├─ engine.py                  # Training/evaluation engine
+│  ├─ losses.py                  # Training loss functions
+│  └─ runner.py                  # Training runner/orchestration
+│
+└─ utils/
+   ├─ data_loader.py             # Shared data loading utilities
+   └─ drive_downloads.py         # Drive download helpers
+```
+<details>
+
+
 
 ---
 
