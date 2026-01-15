@@ -6,7 +6,8 @@ import pandas as pd
 from tqdm.auto import tqdm
 import shutil
 
-from src.config import PROJECT_ROOT
+current_dir = Path(__file__).resolve().parent
+PROJECT_ROOT = current_dir.parent
 sys.path.append(str(PROJECT_ROOT))
 
 from src.fnspid.text_functions import clean_str, norm_url, same_or_next_trading_day_nyse

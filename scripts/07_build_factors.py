@@ -5,7 +5,8 @@ import numpy as np
 from pathlib import Path
 from dotenv import load_dotenv
 
-from src.config import PROJECT_ROOT
+current_dir = Path(__file__).resolve().parent
+PROJECT_ROOT = current_dir.parent
 sys.path.append(str(PROJECT_ROOT))
 load_dotenv(PROJECT_ROOT / ".env")
 

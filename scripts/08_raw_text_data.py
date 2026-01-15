@@ -6,7 +6,8 @@ from pathlib import Path
 
 from datasets import load_dataset
 
-from src.config import PROJECT_ROOT
+current_dir = Path(__file__).resolve().parent
+PROJECT_ROOT = current_dir.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.fnspid import text_functions as tf

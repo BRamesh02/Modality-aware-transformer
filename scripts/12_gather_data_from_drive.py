@@ -3,7 +3,8 @@ import json
 import time
 from pathlib import Path
 
-from src.config import PROJECT_ROOT
+current_dir = Path(__file__).resolve().parent
+PROJECT_ROOT = current_dir.parent
 sys.path.append(str(PROJECT_ROOT))
 
 from src.utils.drive_downloads import download_drive_files

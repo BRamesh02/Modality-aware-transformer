@@ -7,7 +7,8 @@ import torch
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer, AutoModel, AutoModelForSequenceClassification
 
-from src.config import PROJECT_ROOT
+current_dir = Path(__file__).resolve().parent
+PROJECT_ROOT = current_dir.parent
 sys.path.append(str(PROJECT_ROOT))
 
 from src.fnspid.bert_features import (  
