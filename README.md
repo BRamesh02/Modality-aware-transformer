@@ -99,97 +99,109 @@ Modality-aware-transformer/
 
 <details>
 <summary><strong>src/</strong></summary>
-<summary><strong>src/evaluation/</strong></summary>
 
 ```text
-src/evaluation/
-├─ predictions/
-│  ├─ compare.py                  # Compare model predictions
-│  ├─ evaluator.py                # Walk-forward evaluation utilities
-│  ├─ inference.py                # Prediction/inference utilities
-│  ├─ metrics.py                  # Prediction metrics
-│  └─ plots.py                    # Prediction plots
-└─ portfolio/
-   ├─ attribution.py              # Performance attribution metrics
-   ├─ backtest.py                 # Portfolio backtesting logic
-   ├─ performance.py              # Return and risk metrics
-   └─ robustness.py               # Robustness checks and stress tests
+src/
+├─ evaluation/
+├─ fnspid/
+├─ models/
+├─ numerical_data/
+├─ training/
+└─ utils/
 ```
-</details>
 
-<details>
-<summary><strong>src/fnspid/</strong></summary>
+  <details>
+  <summary><strong>src/evaluation/</strong> — evaluation utilities</summary>
 
-```text
-src/fnspid/
-├─ bert_features.py               # BERT-based feature extraction
-├─ linking.py                     # Text-to-identifier linking helpers
-├─ store_data.py                  # Data storage routines
-└─ text_functions.py              # Text preprocessing utilities
-```
-</details>
+  ```text
+  src/evaluation/
+  ├─ predictions/
+  │  ├─ compare.py                  # Compare model predictions
+  │  ├─ evaluator.py                # Walk-forward evaluation utilities
+  │  ├─ inference.py                # Prediction/inference utilities
+  │  ├─ metrics.py                  # Prediction metrics
+  │  └─ plots.py                    # Prediction plots
+  └─ portfolio/
+     ├─ attribution.py              # Performance attribution metrics
+     ├─ backtest.py                 # Portfolio backtesting logic
+     ├─ performance.py              # Return and risk metrics
+     └─ robustness.py               # Robustness checks and stress tests
+  ```
+  </details>
 
-<details>
-<summary><strong>src/models/</strong></summary>
+  <details>
+  <summary><strong>src/fnspid/</strong> — text processing (FNSPID)</summary>
 
-```text
-src/models/
-├─ architectures/
-│  ├─ canonical_transformer.py    # Baseline transformer architecture
-│  └─ mat.py                      # Modality-Aware Transformer architecture
-├─ decoders/
-│  ├─ canonical_decoder.py        # Baseline decoder
-│  └─ mat_decoder.py              # MAT decoder
-├─ encoders/
-│  ├─ canonical_encoder.py        # Baseline encoder
-│  ├─ mat_encoder.py              # MAT encoder
-│  └─ mat_encoder_weighted.py     # MAT encoder with modality weighting
-├─ layers/
-│  ├─ feature_attention.py        # Feature-level attention layers
-│  ├─ masks.py                    # Attention mask utilities
-│  └─ positional_encoding.py      # Positional encoding layers
-├─ config.py                      # Model configuration defaults
-└─ dataset.py                     # Dataset and dataloader definitions
-```
-</details>
+  ```text
+  src/fnspid/
+  ├─ bert_features.py               # BERT-based feature extraction
+  ├─ linking.py                     # Text-to-identifier linking helpers
+  ├─ store_data.py                  # Data storage routines
+  └─ text_functions.py              # Text preprocessing utilities
+  ```
+  </details>
 
-<details>
-<summary><strong>src/numerical_data/</strong></summary>
+  <details>
+  <summary><strong>src/models/</strong> — model code</summary>
 
-```text
-src/numerical_data/
-├─ factors.py                     # Factor construction logic
-├─ features_macro.py              # Macro features computation
-├─ features_market.py             # Market features computation
-├─ features_ratios.py             # Ratio features computation
-├─ fred_client.py                 # FRED data client
-├─ target.py                      # Target construction
-├─ universe.py                    # Universe selection logic
-└─ wrds_client.py                 # WRDS data client
-```
-</details>
+  ```text
+  src/models/
+  ├─ architectures/
+  │  ├─ canonical_transformer.py    # Baseline transformer architecture
+  │  └─ mat.py                      # Modality-Aware Transformer architecture
+  ├─ decoders/
+  │  ├─ canonical_decoder.py        # Baseline decoder
+  │  └─ mat_decoder.py              # MAT decoder
+  ├─ encoders/
+  │  ├─ canonical_encoder.py        # Baseline encoder
+  │  ├─ mat_encoder.py              # MAT encoder
+  │  └─ mat_encoder_weighted.py     # MAT encoder with modality weighting
+  ├─ layers/
+  │  ├─ feature_attention.py        # Feature-level attention layers
+  │  ├─ masks.py                    # Attention mask utilities
+  │  └─ positional_encoding.py      # Positional encoding layers
+  ├─ config.py                      # Model configuration defaults
+  └─ dataset.py                     # Dataset and dataloader definitions
+  ```
+  </details>
 
-<details>
-<summary><strong>src/training/</strong></summary>
+  <details>
+  <summary><strong>src/numerical_data/</strong> — numerical features</summary>
 
-```text
-src/training/
-├─ callbacks.py                   # Training callbacks and logging
-├─ engine.py                      # Training/evaluation engine
-├─ losses.py                      # Training loss functions
-└─ runner.py                      # Training runner/orchestration
-```
-</details>
+  ```text
+  src/numerical_data/
+  ├─ factors.py                     # Factor construction logic
+  ├─ features_macro.py              # Macro features computation
+  ├─ features_market.py             # Market features computation
+  ├─ features_ratios.py             # Ratio features computation
+  ├─ fred_client.py                 # FRED data client
+  ├─ target.py                      # Target construction
+  ├─ universe.py                    # Universe selection logic
+  └─ wrds_client.py                 # WRDS data client
+  ```
+  </details>
 
-<details>
-<summary><strong>src/utils/</strong></summary>
+  <details>
+  <summary><strong>src/training/</strong> — training pipeline</summary>
 
-```text
-src/utils/
-├─ data_loader.py                 # Shared data loading utilities
-└─ drive_downloads.py             # Drive download helpers
-```
-</details>
+  ```text
+  src/training/
+  ├─ callbacks.py                   # Training callbacks and logging
+  ├─ engine.py                      # Training/evaluation engine
+  ├─ losses.py                      # Training loss functions
+  └─ runner.py                      # Training runner/orchestration
+  ```
+  </details>
+
+  <details>
+  <summary><strong>src/utils/</strong> — shared utilities</summary>
+
+  ```text
+  src/utils/
+  ├─ data_loader.py                 # Shared data loading utilities
+  └─ drive_downloads.py             # Drive download helpers
+  ```
+  </details>
 </details>
 
 
