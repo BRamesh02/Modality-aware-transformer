@@ -51,6 +51,7 @@ def run_debug():
         "nhead": 2,
         "n_layers": 1,
         "forecast_horizon": 2,     # H=2 to test Decay logic
+        "validation_horizon":2,
         "primary_eval_horizon": 1, # Evaluate on H=1 accuracy
         
         # 3. Critical Dataloader Fixes for Colab

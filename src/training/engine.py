@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from tqdm import tqdm
-from torch.cuda.amp import GradScaler
+from torch.amp import GradScaler
 
 def train_epoch(model, model_config: dict, dataloader, optimizer, criterion, device, scheduler=None):
     """
@@ -12,8 +12,8 @@ def train_epoch(model, model_config: dict, dataloader, optimizer, criterion, dev
     
     use_amp = (device == 'cuda')
     dtype = torch.bfloat16 if (use_amp and torch.cuda.is_bf16_supported()) else torch.float16
-    scaler = GradScaler(enabled=(use_amp and dtype == torch.float16))
-
+    scaler = GradScaler('cuda', enabled=(use_amp and dtype == torch.float16))
+    
     progress_bar = tqdm(dataloader, desc="Training", leave=False)
 
     for batch in progress_bar:

@@ -52,7 +52,7 @@ def plot_comparison_bar(metric_dict, metric_name, save_dir=None, suffix=""):
     values = metric_dict[metric_name]
     
     fig, ax = plt.subplots(figsize=(8, 6))
-    sns.barplot(x=names, y=values, palette=[colors[0], colors[1]], ax=ax)
+    sns.barplot(x=names, y=values, hue=names, palette=[colors[0], colors[1]], legend=False, ax=ax)
     ax.set_title(f"Model Comparison: {metric_name} {suffix}")
     for i, v in enumerate(values):
         ax.text(i, v, f"{v:.5f}", color='black', ha="center", va="bottom", fontweight='bold')
