@@ -10,14 +10,11 @@ Core principle:
 - Model comparison uses a Diebold–Mariano test applied to DAILY loss series.
 """
 
-
 import numpy as np
 import pandas as pd
 from scipy import stats
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-
-# Helpers
 
 def _safe_series(x) -> pd.Series:
     """Ensure a 1D pandas Series."""
@@ -40,8 +37,6 @@ def _sort_dropna(s: pd.Series) -> pd.Series:
         pass
     return s.dropna()
 
-
-# 1) IC (Pearson) - daily cross-sectional correlation
 
 def calculate_ic_metrics(df_pred: pd.DataFrame):
     """
@@ -92,8 +87,6 @@ def calculate_ic_metrics(df_pred: pd.DataFrame):
     )
 
 
-# 2) Directional metrics - computed per day then averaged
-
 def calculate_directional_metrics(df_pred: pd.DataFrame, top_k_percent: float = 0.2):
     """
     Compute daily directional metrics and average over time.
@@ -126,15 +119,13 @@ def calculate_directional_metrics(df_pred: pd.DataFrame, top_k_percent: float = 
 
     return {
         "Hit_Rate": float(daily_hit.mean()) if len(daily_hit) else np.nan,
-        f"Precision_Top_{int(top_k_percent * 100)}%":
-            float(precision_series.mean()) if len(precision_series) else np.nan,
+        f"Precision_Top_{int(top_k_percent * 100)}%": (
+            float(precision_series.mean()) if len(precision_series) else np.nan
+        ),
         "HitRate_n_days": int(daily_hit.shape[0]),
         "Precision_n_days": int(precision_series.shape[0]),
     }
 
-
-
-# 3) Regression metrics - pooled panel metrics
 
 def calculate_regression_metrics(df_pred: pd.DataFrame):
     """
@@ -160,9 +151,6 @@ def calculate_regression_metrics(df_pred: pd.DataFrame):
         "R2": float(r2_score(y_true, y_pred)),
     }
 
-
-
-# 4) Rank IC (Spearman) - daily cross-sectional rank correlation
 
 def calculate_rank_ic_metrics(df_pred: pd.DataFrame):
     """
@@ -213,9 +201,6 @@ def calculate_rank_ic_metrics(df_pred: pd.DataFrame):
     )
 
 
-
-# 5) Daily loss metrics (MAE / MSE per date)
-
 def calculate_daily_loss_metrics(df_pred: pd.DataFrame):
     """
     Compute MAE and MSE per date (cross-sectional mean), then summarize over time.
@@ -248,9 +233,6 @@ def calculate_daily_loss_metrics(df_pred: pd.DataFrame):
     }
     return out, daily_mae, daily_mse
 
-
-
-# 6) Diebold–Mariano test
 
 def diebold_mariano_test(
     y_true,
@@ -287,7 +269,7 @@ def diebold_mariano_test(
     e2 = y_true - y_pred_benchmark
 
     if criterion == "MSE":
-        d = e1 ** 2 - e2 ** 2
+        d = e1**2 - e2**2
     else:
         d = np.abs(e1) - np.abs(e2)
 
@@ -338,7 +320,8 @@ def diebold_mariano_on_daily_loss(
 
     # Keep only merge keys that exist in both DataFrames
     keys = [
-        k for k in merge_keys
+        k
+        for k in merge_keys
         if k in df_pred_model.columns and k in df_pred_benchmark.columns
     ]
 
