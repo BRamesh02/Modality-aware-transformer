@@ -2,7 +2,7 @@
 
 This repository contains an implementation and empirical study of a Modality-Aware Transformer (MAT) applied to financial prediction tasks using multimodal data, combining numerical time series (e.g. stock returns) and textual information (e.g. financial news).
 
-The project is conducted in the context of a research-oriented machine learning study for the **ENSAE course Advanced Machine Learning** given by M. Stromme.
+The project is conducted in the context of a research-oriented machine learning study for the **ENSAE course Advanced Machine Learning (2025)** given by A. Stromme.
 
 **Authors**  
 - Ramesh Brian  
