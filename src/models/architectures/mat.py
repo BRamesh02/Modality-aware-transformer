@@ -8,10 +8,10 @@ from src.models.layers.positional_encoding import PositionalEncoding
 
 class MAT(nn.Module):
     """
-    MAT encoder-decoder autoregressif (sans LearnedQuery).
+    Autoregressive MAT encoder-decoder (no LearnedQuery).
     - Encoder: mem_num, mem_text
-    - Decoder: attend un tgt [B,H,D] (embeddings de target, masqués causalement)
-    - Head: projette chaque état tgt -> y_hat
+    - Decoder: expects tgt [B,H,D] (target embeddings, causally masked)
+    - Head: projects each tgt state -> y_hat
     """
 
     def __init__(
@@ -84,10 +84,10 @@ class MAT(nn.Module):
         Teacher forcing forward.
 
         Args:
-            x_* : inputs [B,T,...]
-            y_hist: [B,H] = valeurs "connues" utilisées comme entrée du décodeur (décalées)
-                    Exemple standard: y_hist = [y_t, y_{t+1}, ..., y_{t+H-1}] pour prédire
-                    [y_{t+1}, ..., y_{t+H}] (décalage d'un pas).
+            x_*: inputs [B,T,...]
+            y_hist: [B,H] known values used as decoder input (shifted).
+                Standard example: y_hist = [y_t, y_{t+1}, ..., y_{t+H-1}] to predict
+                [y_{t+1}, ..., y_{t+H}] (one-step shift).
         Returns:
             y_hat: [B,H]
         """
@@ -100,7 +100,7 @@ class MAT(nn.Module):
         mem_num, mem_text = self.encoder(x_num, x_sent, x_emb)  # [B,T,D] each
 
         # Build tgt inputs: [B,H,D] = [BOS, embed(y_hist[:,:-1])] for strict 1-step shift
-        # Ici, y_hist est déjà "l'entrée" décalée. On construit:
+        # Here, y_hist is already the shifted input. We build:
         # tgt = [BOS] + embed(y_hist[:, :-1])  => longueur H
         y_emb = self.y_in_proj(y_hist.unsqueeze(-1))  # [B,H,D]
         tgt_tokens = torch.cat([self.bos.expand(B, 1, -1), y_emb], dim=1)  # [B,H+1,D]
@@ -118,10 +118,10 @@ class MAT(nn.Module):
         y0: torch.Tensor = None,
     ) -> torch.Tensor:
         """
-        Inference autoregressive.
+        Autoregressive inference.
 
         Args:
-            y0: [B] = dernière valeur connue (ou un proxy) pour initialiser l'AR.
+            y0: [B] last known value (or proxy) to initialize the AR loop.
         Returns:
             y_hat: [B,H]
         """

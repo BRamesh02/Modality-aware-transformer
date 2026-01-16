@@ -78,17 +78,8 @@ class FinancialDataset(Dataset):
             for i in valid_starts:
                 # `t` is the index of the last input day (The "Forecast Date")
                 t = i + self.window_size - 1
-
-                # Check if the TARGET date (t+1, which is at index `t` in your shifted logic)
-                # falls within the requested range.
-                # Note: dates[t] is the date of row `t`. Since row `t` holds target t+1,
-                # checking dates[t] is effectively checking the date of the target?
-                # Actually, usually 'date' col is the input date.
-                # If date col is t, and target is t+1, we want to filter by the date of the target.
-                # Let's trust dates[t] is the "Forecast Date" and we filter by that.
-
                 current_date = dates[t]
-                # Logic: We only want predictions where the FORECAST DATE is within range
+                # We only want predictions where the FORECAST DATE is within range
                 if min_ts <= current_date <= max_ts:
                     self.indices.append(i)
 
@@ -104,7 +95,7 @@ class FinancialDataset(Dataset):
         T = self.window_size
         H = self.H
 
-        # 1. Inputs (Indices i to i+T)
+        # Inputs (Indices i to i+T)
         x_num = self.data_num[i : i + T]
         x_sent = self.data_sent[i : i + T]
 
@@ -112,7 +103,7 @@ class FinancialDataset(Dataset):
         if self.data_emb is not None:
             x_emb = self.data_emb[i : i + T]
 
-        # 2. Targets & History
+        #  Targets & History
         # t is the index of the last input day
         t = i + T - 1
 
@@ -124,8 +115,6 @@ class FinancialDataset(Dataset):
         # We need Return_{t}. Since df['target'] at `t-1` is Return_{t}, we start at `t-1`.
         y_hist = self.data_target[t - 1 : t - 1 + H]
 
-        # 3. Metadata
-        # We explicitly grab the "Forecast Date" (Date at row t)
         date_forecast = str(self.df.iloc[t]["date"])
         permno_val = int(self.df.iloc[i]["permno"])
 

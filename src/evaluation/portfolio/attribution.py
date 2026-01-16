@@ -38,7 +38,7 @@ def get_attribution_summary(model) -> pd.DataFrame:
         {"Beta": model.params, "t-Stat": model.tvalues, "p-Value": model.pvalues}
     )
 
-    df["Significant"] = df["p-Value"].apply(lambda x: "✅" if x < 0.05 else "")
+    df["Significant"] = df["p-Value"].apply(lambda x: "Yes" if x < 0.05 else "No")
 
     if "const" in df.index:
         daily_alpha = df.loc["const", "Beta"]

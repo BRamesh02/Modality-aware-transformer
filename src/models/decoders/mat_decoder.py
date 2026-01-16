@@ -8,30 +8,20 @@ class MATDecoderLayer(nn.Module):
     MAT decoder layer aligned with paper Sec. 3.2.3:
 
     Sub-layer 1) Masked MHA over target sequence (autoregressive)
-        - Eq. (3.17) Attn^masked = softmax(Q_tar K_tar^T / sqrt(d_k)) V_tar
-        - Eq. (3.18) Head computation
-        - Eq. (3.19) Masked MHA = Concat(H_1,...,H_h) W^O_tar
-
     Sub-layer 2) Target-modal MHA (target queries attend to each modality memory)
-        - Eq. (3.20) Attn^{tar-mod}_{mod_i} = softmax(Q_tar K_mod_i^T / sqrt(d_k)) V_mod_i
-        - Eq. (3.21) Head computation
-        - Eq. (3.22) Target-modal MHA = Concat(H_1,...,H_h) W^O_{tar,mod_i}
-
     Sub-layer 3) Feed-forward (standard Transformer FFN)
 
-    Note: we use post-norm style: residual + LayerNorm after each sub-layer,
-    matching the text "residual connections, following by layer normalization".
     """
 
     def __init__(self, d_model: int, nhead: int, dropout: float):
         super().__init__()
 
-        # Sub-layer 1: masked self-attn on target sequence (Eq. 3.17-3.19)
+        # Sub-layer 1: masked self-attn on target sequence
         self.self_attn_tar = nn.MultiheadAttention(
             d_model, nhead, dropout=dropout, batch_first=True
         )
 
-        # Sub-layer 2: target-modal cross-attn to each modality (Eq. 3.20-3.22)
+        # Sub-layer 2: target-modal cross-attn to each modality
         self.cross_num = nn.MultiheadAttention(
             d_model, nhead, dropout=dropout, batch_first=True
         )
@@ -71,7 +61,7 @@ class MATDecoderLayer(nn.Module):
         B, H, D = tgt.shape
         device = tgt.device
 
-        # Sub-layer 1: Masked MHA on target sequence (Eq. 3.17-3.19)
+        # Sub-layer 1: Masked MHA on target sequence
         attn_mask = causal_mask(H, device=device)
         tgt_ctx, _ = self.self_attn_tar(
             query=tgt,
@@ -83,9 +73,7 @@ class MATDecoderLayer(nn.Module):
         )
         tgt = self.norm0(tgt + self.drop(tgt_ctx))
 
-        # Sub-layer 2: Target-modal MHA (Eq. 3.20-3.22)
-        # Query = Q_tar from masked MHA output (tgt)
-        # Key/Value = modality memory (already feature-weighted by encoder)
+        # Sub-layer 2: Target-modal MHA
 
         ctx_n, _ = self.cross_num(
             query=tgt,

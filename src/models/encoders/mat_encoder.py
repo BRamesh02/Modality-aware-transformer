@@ -13,7 +13,7 @@ class MATEncoderLayer(nn.Module):
     def __init__(self, d_model, nhead, dim_feedforward, dropout):
         super().__init__()
 
-        # --- 1. Self Attention ---
+        # 1. Self Attention
         self.self_attn_num = nn.MultiheadAttention(
             d_model, nhead, dropout=dropout, batch_first=True
         )
@@ -23,7 +23,7 @@ class MATEncoderLayer(nn.Module):
         self.norm1_num = nn.LayerNorm(d_model)
         self.norm1_text = nn.LayerNorm(d_model)
 
-        # --- 2. Cross Attention ---
+        # 2. Cross Attention
         self.cross_attn_num = nn.MultiheadAttention(
             d_model, nhead, dropout=dropout, batch_first=True
         )
@@ -33,7 +33,7 @@ class MATEncoderLayer(nn.Module):
         self.norm2_num = nn.LayerNorm(d_model)
         self.norm2_text = nn.LayerNorm(d_model)
 
-        # --- 3. Feed Forward ---
+        # 3. Feed Forward
         self.ff_num = nn.Sequential(
             nn.Linear(d_model, dim_feedforward),
             nn.GELU(),
@@ -52,7 +52,7 @@ class MATEncoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x_num, x_text):
-        # --- Step 1: Self Attention (Pre-Norm) ---
+        # Step 1: Self Attention (Pre-Norm)
         # Normalize INPUT, then attend, then add to original input
 
         # Num Stream
@@ -83,7 +83,7 @@ class MATEncoderLayer(nn.Module):
         )
         x_text = x_text + self.dropout(attn_t_cross)
 
-        # --- Step 3: Feed Forward (Pre-Norm) ---
+        # Step 3: Feed Forward (Pre-Norm)
         x_n_norm = self.norm3_num(x_num)
         ff_n = self.ff_num(x_n_norm)
         x_num = x_num + self.dropout(ff_n)
@@ -112,7 +112,7 @@ class MATEncoder(nn.Module):
 
         self.use_emb = use_emb
 
-        # Feature Attention (Optional, often helps filter noise early)
+        # Feature Attention
         self.num_feat_attn = FeatureAttention(num_input_dim)
         text_feat_dim = sent_dim + (emb_dim if self.use_emb else 0)
         self.text_feat_attn = FeatureAttention(text_feat_dim)
@@ -165,7 +165,7 @@ class MATEncoder(nn.Module):
         self.norm_final_text = nn.LayerNorm(d_model)
 
     def forward(self, x_num, x_sent, x_emb=None):
-        # 1. Prepare Text Input
+        # Prepare Text Input
         t_sent = self.sent_proj(x_sent)  # [B,T,sent_dim]
 
         if self.use_emb:
@@ -176,23 +176,23 @@ class MATEncoder(nn.Module):
         else:
             x_text = t_sent
 
-        # 2. Feature Attention
+        # Feature Attention
         x_num, _ = self.num_feat_attn(x_num)
         x_text, _ = self.text_feat_attn(x_text)
 
-        # 3. Project to d_model
+        # Project to d_model
         h_num = self.num_proj(x_num)
         h_text = self.text_proj(x_text)
 
-        # 4. Positional Encoding
+        # Positional Encoding
         h_num = self.pos_encoder(h_num.transpose(0, 1)).transpose(0, 1)
         h_text = self.pos_encoder(h_text.transpose(0, 1)).transpose(0, 1)
 
-        # 5. Pass through Layers
+        # Pass through Layers
         for layer in self.layers:
             h_num, h_text = layer(h_num, h_text)
 
-        # 6. Final Normalization (Crucial for Pre-Norm)
+        # Final Normalization (Crucial for Pre-Norm)
         h_num = self.norm_final_num(h_num)
         h_text = self.norm_final_text(h_text)
 

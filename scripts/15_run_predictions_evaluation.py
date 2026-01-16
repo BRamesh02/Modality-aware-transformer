@@ -34,7 +34,6 @@ def main():
         print(f"   Error loading parquet files: {e}")
         return
 
-    # --- Basic schema checks
     required = {"date_forecast", "permno", "pred", "target"}
     missing_mat = required - set(df_mat.columns)
     missing_can = required - set(df_can.columns)
@@ -45,11 +44,10 @@ def main():
         print(f"CRITICAL ERROR: Canonical missing columns: {missing_can}")
         return
 
-    # --- Make date safe for sorting/plots
     df_mat["date_forecast"] = pd.to_datetime(df_mat["date_forecast"], errors="coerce")
     df_can["date_forecast"] = pd.to_datetime(df_can["date_forecast"], errors="coerce")
 
-    # --- Determine primary horizon
+    # Determine primary horizon
     primary_h = CONFIG.get("primary_eval_horizon", 1)
 
     # Optional: sort for stable outputs
@@ -59,7 +57,7 @@ def main():
     df_mat = df_mat.sort_values(sort_cols).reset_index(drop=True)
     df_can = df_can.sort_values(sort_cols).reset_index(drop=True)
 
-    # --- Quick logs
+    # Quick logs
     print(f"   MAT unique dates: {df_mat['date_forecast'].nunique()}")
     print(f"   Canonical unique dates: {df_can['date_forecast'].nunique()}")
     if "horizon" in df_mat.columns:

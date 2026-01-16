@@ -5,8 +5,8 @@ from src.models.layers.masks import causal_mask
 
 class DecoderLayer(nn.Module):
     """
-    Decoder Transformer classique:
-      1) Masked self-attention sur tgt
+    Standard Transformer decoder layer:
+      1) Masked self-attention on tgt
       2) Cross-attention tgt -> memory (encoder)
       3) FFN
     """

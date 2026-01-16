@@ -61,9 +61,7 @@ class ModelEvaluator:
         self.figures_dir.mkdir(parents=True, exist_ok=True)
         self.tables_dir.mkdir(parents=True, exist_ok=True)
 
-    # -----------------------------------------------------------------
     # Internal: evaluate one slice
-    # -----------------------------------------------------------------
 
     def _evaluate_slice(self, df_slice, model_name, horizon, is_primary=False):
         if df_slice is None or df_slice.empty:
@@ -108,9 +106,7 @@ class ModelEvaluator:
 
         return metrics
 
-    # -----------------------------------------------------------------
     # Single-model evaluation
-    # -----------------------------------------------------------------
 
     def evaluate_single_model(self, df_pred, model_name="Model", primary_horizon=1):
         print(f"\nEvaluating model: {model_name}")
@@ -187,10 +183,8 @@ class ModelEvaluator:
             ordered + [c for c in df_summary.columns if c not in ordered]
         ]
 
-        # --------------------------------------------------
         # Distribution diagnostics: predictions vs targets
-        # (one figure per horizon)
-        # --------------------------------------------------
+
         if "horizon" in df_pred.columns:
             plot_prediction_vs_target_distribution_zscore_by_date(
                 df_pred=df_pred,
@@ -207,9 +201,7 @@ class ModelEvaluator:
 
         return df_summary
 
-    # -----------------------------------------------------------------
     # Model comparison
-    # -----------------------------------------------------------------
 
     def compare_models(
         self,

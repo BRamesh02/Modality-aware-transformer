@@ -7,11 +7,11 @@ from src.models.layers.positional_encoding import PositionalEncoding
 
 class CanonicalTransformer(nn.Module):
     """
-    Baseline Transformer encoder-decoder "classique" autoregressif.
+    Autoregressive baseline Transformer encoder-decoder.
     - Encoder: CanonicalEncoder -> memory [B,T,D]
-    - Decoder: CanonicalDecoder avec self-attn masquée + cross-attn
-    - Entrée decoder (train): [BOS, y_t, ..., y_{t+H-1}] (H+1 tokens)
-    - Sortie: prédictions y_{t+1}..y_{t+H} via états 1..H
+    - Decoder: CanonicalDecoder with masked self-attn + cross-attn
+    - Decoder input (train): [BOS, y_t, ..., y_{t+H-1}] (H+1 tokens)
+    - Output: predictions y_{t+1}..y_{t+H} from states 1..H
     """
 
     def __init__(
@@ -63,9 +63,9 @@ class CanonicalTransformer(nn.Module):
 
     def forward(self, x_num, x_sent, x_emb=None, y_hist=None):
         """
-        Train (teacher forcing)
+        Teacher forcing forward.
         y_hist: [B,H] = [y_t, y_{t+1}, ..., y_{t+H-1}]
-        Retour: y_hat [B,H] = [y_{t+1}, ..., y_{t+H}]
+        Returns y_hat [B,H] = [y_{t+1}, ..., y_{t+H}]
         """
         B = x_num.size(0)
         H = y_hist.size(1)
@@ -91,9 +91,9 @@ class CanonicalTransformer(nn.Module):
     @torch.no_grad()
     def predict(self, x_num, x_sent, x_emb=None, y0=None):
         """
-        Inference AR:
-        y0: [B] = y_t (dernière valeur connue)
-        Retour: [B,H] = y_{t+1}..y_{t+H}
+        Autoregressive inference.
+        y0: [B] = y_t (last known value)
+        Returns: [B,H] = y_{t+1}..y_{t+H}
         """
         B = x_num.size(0)
         if self.use_emb and x_emb is None:

@@ -84,16 +84,16 @@ def run_backtest(
     signal = signal.loc[common_idx]
     returns = returns.loc[common_idx]
 
-    # --- Compute Weights ---
+    # Compute Weights
     weights = compute_decile_weights(signal, universe_mask)
 
-    # --- PnL Simulation ---
+    # PnL Simulation
     weights_prev = weights.shift(1).fillna(0.0)
 
     strat_ret = (weights_prev * returns).sum(axis=1)
     strat_ret.name = factor_name
 
-    # --- Turnover & Cost Calculation ---
+    # Turnover & Cost Calculation
     drifted_pos = weights_prev * (1 + returns)
 
     drifted_weights = drifted_pos
