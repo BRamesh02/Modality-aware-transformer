@@ -21,8 +21,7 @@ def main():
         print("   Please run 'scripts/13_run_training.py' or '14_run_inference_only.py' first.")
         return
 
-    # 3. Load Predictions
-    print(f"\n📂 Loading predictions...")
+    print(f"\nLoading predictions...")
     try:
         df_mat = pd.read_parquet(mat_path)
         df_can = pd.read_parquet(can_path)

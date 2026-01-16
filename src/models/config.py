@@ -56,7 +56,7 @@ CONFIG = {
     # Stop if IC (Correlation) doesn't improve for 5 epochs.
     "patience": 5,           
     
-    "batch_size": 16384,      
+    "batch_size": 8192,      
     
     # The Optimizer's Goal (HuberLoss, MAE, weighted_MSE). 
     "criterion": "HuberLoss",     
