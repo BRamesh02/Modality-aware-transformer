@@ -33,7 +33,7 @@ This project:
 ---
 ## Code Provenance and Originality
 
-This project is primarily original code written for the course. The core model implementations (MAT architecture, encoders/decoders, training loop, walk-forward runner, and evaluation pipeline) were implemented from scratch based on the paper’s high-level description and adapted to our data format. We relied on standard open-source libraries (PyTorch, pandas, scikit-learn) for model layers, tensor ops, and preprocessing. Where external methods were used (e.g., FinBERT embeddings from Araci 2019), we used the publicly available pretrained model via the Hugging Face API and adapted the feature extraction pipeline to our dataset. Any borrowed ideas were re-implemented to fit our walk-forward protocol and multimodal input design. The few components that mirror common patterns (early stopping, training loops) were written by us and tailored for the project (e.g., horizon-wise prediction, point-in-time text linking).
+This project is primarily original code written for the course. The core model implementations (MAT architecture, encoders/decoders, training loop, walk-forward runner, and evaluation pipeline) were implemented from scratch based on the paper’s high-level description and adapted to our data format. We relied on standard open-source libraries (PyTorch, pandas, scikit-learn) for model layers, tensor ops, and preprocessing. Where external methods were used (e.g., [FinBERT](https://arxiv.org/abs/1908.10063) from Araci, 2019), we used the publicly available pretrained model via the [Hugging Face API](https://huggingface.co/ProsusAI/finbert) and adapted the feature extraction pipeline to our dataset. Any borrowed ideas were re-implemented to fit our walk-forward protocol and multimodal input design. 
 
 ---
 ## Repository Structure
@@ -44,7 +44,6 @@ This project is primarily original code written for the course. The core model i
 Modality-aware-transformer/
 ├─ README.md                         # Project overview, structure, and usage
 ├─ requirements.txt                  # Python dependencies
-├─ config/                           # Drive configuration
 ├─ data/                             # Raw and processed datasets
 ├─ models/                           # Saved weights (walk-forward checkpoints)
 ├─ reports/                          # Tables and figures from evaluations
@@ -243,7 +242,7 @@ FRED_API_KEY=your_fred_key
 ```
 
 Notes:
-- WRDS is required for numerical data (Scripts 1-3 and 7).
+- WRDS is required for numerical data ( in Scripts 1-3 (Option B) and 7).
 - FRED is optional; Step 4 will skip macro features if `FRED_API_KEY` is missing.
 </details>
 
