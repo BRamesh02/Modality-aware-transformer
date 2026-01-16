@@ -45,7 +45,13 @@ def plot_quintiles_scientific(df_quantiles: pd.DataFrame, title: str, save_path)
     
     fig, ax = plt.subplots(figsize=(10, 6))
     
-    colors = sns.color_palette("RdYlGn", n_colors=len(cum_ret.columns))[::-1] 
+    colors = [
+        "#1a9641", # Q1: Deep Green
+        "#a6d96a", # Q2: Light Green
+        "#757575", # Q3: Neutral Grey
+        "#fdae61", # Q4: Orange
+        "#d7191c"  # Q5: Deep Red
+    ]
     
     for i, col in enumerate(cum_ret.columns):
         is_edge = (i == 0) or (i == len(cum_ret.columns) - 1)
