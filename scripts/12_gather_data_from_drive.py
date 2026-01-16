@@ -21,6 +21,9 @@ def get_dest_folder(data_type, stage):
     data_type: 'text' or 'numerical'
     stage: 'raw', 'preprocessed', 'processed'
     """
+    if data_type == "predictions":
+        return DATA_ROOT / "processed" / "predictions"
+
     if data_type == "text_data":
         subfolder = "fnspid"
     else:
@@ -44,6 +47,7 @@ def main():
     print("\nSelect Data Type:")
     print("1. Text Data (fnspid)")
     print("2. Numerical Data")
+    print("3. Predictions")  
     
     type_choice = input(">>> ").strip().lower()
     
@@ -51,8 +55,34 @@ def main():
         selected_type = "text_data"
     elif type_choice in ["2", "numerical", "numerical data"]:
         selected_type = "numerical_data"
+    elif type_choice in ["3", "predictions", "prediction", "pred"]:  
+        selected_type = "predictions"
     else:
         print("Invalid choice.")
+        return
+
+
+    if selected_type == "predictions":
+        file_map = drive_ids[selected_type]
+        dest_folder = get_dest_folder(selected_type, stage="processed")  
+
+        print(f"\n--- Configuration ---")
+        print(f"Type:   {selected_type}")
+        print(f"Stage:  (none)")
+        print(f"Target: {dest_folder}")
+
+        prefix = ""
+
+        print("\nStarting Download...")
+        download_drive_files(
+            file_map,
+            dest_folder,
+            prefix=prefix,
+            sleep_sec=SLEEP_SEC,
+            ext=EXT
+        )
+
+        print("\nDone.")
         return
 
     available_stages = list(drive_ids[selected_type].keys())
