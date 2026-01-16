@@ -47,7 +47,6 @@ Modality-aware-transformer/
 ├─ data/                             # Raw and processed datasets
 ├─ models/                           # Saved weights (walk-forward checkpoints)
 ├─ reports/                          # Tables and figures from evaluations
-├─ notebooks/                        # Exploration and debugging
 ├─ scripts/                          # Data pipeline and execution
 └─ src/                              # Core library
 ```
@@ -88,15 +87,6 @@ Modality-aware-transformer/
 ```
 </details>
 
-<details>
-<summary><strong>notebooks/</strong></summary>
-
-```text
-├─ debug.ipynb                       # Debugging and quick checks
-├─ test_model.ipynb                  # End-to-end model testing notebook
-└─ text_data.ipynb                   # Text data exploration
-```
-</details>
 
 <details>
 <summary><strong>scripts/</strong></summary>
