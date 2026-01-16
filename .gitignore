@@ -43,5 +43,4 @@ coverage.xml
 # Ignore all large data files and logs
 *.parquet
 *.log
-*.pt
 *.pth
