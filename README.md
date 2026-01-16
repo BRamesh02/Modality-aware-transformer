@@ -249,43 +249,47 @@ Notes:
 <details>
 <summary><strong>Step 3 — Choose your data source</strong></summary>
 
-Option A : download prebuilt artifacts from Google Drive
+  <details>
+  <summary><strong>Option A — Download prebuilt artifacts from Google Drive</strong></summary>
 
-Note: place `drive_ids.json` in `config/` at the repo root before running this.
+  Note: place `drive_ids.json` in `config/` at the repo root before running this.
 
-```bash
-python scripts/12_gather_data_from_drive.py
-```
+  ```bash
+  python scripts/12_gather_data_from_drive.py
+  ```
 
-In the menu, you can also select **Predictions (or 3)** to download
-`data/processed/predictions/mat_walkforward.parquet` and
-`data/processed/predictions/canonical_walkforward.parquet`. If you do this, you can
-skip Steps 4–7 and go directly to Step 8 to regenerate prediction tables/figures.
+  In the menu, you can also select **Predictions (or 3)** to download
+  `data/processed/predictions/mat_walkforward.parquet` and
+  `data/processed/predictions/canonical_walkforward.parquet`. If you do this, you can
+  skip Steps 4–7 and go directly to Step 8 to regenerate prediction tables/figures.
+  </details>
 
-Option B : build datasets from scratch (run in order)
+  <details>
+  <summary><strong>Option B — Build datasets from scratch (run in order)</strong></summary>
 
-Numerical pipeline:
-```bash
-python scripts/01_build_universe.py
-python scripts/02_build_market_features.py
-python scripts/03_build_ratio_features.py
-python scripts/04_build_macro_features.py
-python scripts/05_build_target.py
-python scripts/06_build_returns.py
-python scripts/07_build_factors.py
-```
+  Numerical pipeline:
+  ```bash
+  python scripts/01_build_universe.py
+  python scripts/02_build_market_features.py
+  python scripts/03_build_ratio_features.py
+  python scripts/04_build_macro_features.py
+  python scripts/05_build_target.py
+  python scripts/06_build_returns.py
+  python scripts/07_build_factors.py
+  ```
 
-Text pipeline:
-```bash
-python scripts/08_raw_text_data.py
-python scripts/09_clean_text_data.py
-python scripts/10_build_text_features_stock.py
-python scripts/11_link_tickers.py
-```
+  Text pipeline:
+  ```bash
+  python scripts/08_raw_text_data.py
+  python scripts/09_clean_text_data.py
+  python scripts/10_build_text_features_stock.py
+  python scripts/11_link_tickers.py
+  ```
 
-Notes:
-- Step 8 streams FNSPID via Hugging Face; Step 10 downloads FinBERT weights.
-- `scripts/11_link_tickers.py` expects `data/raw/crsp_ticker_map.parquet`.
+  Notes:
+  - Step 8 streams FNSPID via Hugging Face; Step 10 downloads FinBERT weights.
+  - `scripts/11_link_tickers.py` expects `data/raw/crsp_ticker_map.parquet`.
+  </details>
 </details>
 
 <details>
