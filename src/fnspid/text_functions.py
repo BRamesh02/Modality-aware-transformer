@@ -7,9 +7,17 @@ import re
 import hashlib
 
 DEFAULT_KEEP_FIELDS: List[str] = [
-    "Date", "Stock_symbol", "Url", "Publisher", "Author",
-    "Article_title", "Article",
-    "Textrank_summary", "Lexrank_summary", "Lsa_summary", "Luhn_summary",
+    "Date",
+    "Stock_symbol",
+    "Url",
+    "Publisher",
+    "Author",
+    "Article_title",
+    "Article",
+    "Textrank_summary",
+    "Lexrank_summary",
+    "Lsa_summary",
+    "Luhn_summary",
 ]
 
 WS_RE = re.compile(r"\s+")
@@ -91,7 +99,6 @@ def build_text_record(ex: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-
 def is_valid_record(ex: Dict[str, Any], min_text_len: int = 20) -> bool:
     """
     Filtre minimum :
@@ -164,12 +171,8 @@ def dedup_stream(
         yield ex
 
 
-
 _nyse = mcal.get_calendar("NYSE")
-_nyse_schedule = _nyse.schedule(
-    start_date="1999-01-01",
-    end_date="2025-12-31"
-)
+_nyse_schedule = _nyse.schedule(start_date="1999-01-01", end_date="2025-12-31")
 _TRADING_DAYS = pd.DatetimeIndex(_nyse_schedule.index)
 
 
@@ -188,8 +191,7 @@ def add_effective_date(ex: Dict[str, Any]) -> Dict[str, Any]:
     """
     dt = ex.get("dt_utc")
     ex["effective_date"] = (
-        next_trading_day_nyse(dt.date()).isoformat()
-        if dt is not None else None
+        next_trading_day_nyse(dt.date()).isoformat() if dt is not None else None
     )
     return ex
 
@@ -219,8 +221,7 @@ def add_effective_date_keep_same(ex: Dict[str, Any]) -> Dict[str, Any]:
     """
     dt = ex.get("dt_utc")
     ex["effective_date"] = (
-        same_or_next_trading_day_nyse(dt.date()).isoformat()
-        if dt is not None else None
+        same_or_next_trading_day_nyse(dt.date()).isoformat() if dt is not None else None
     )
     return ex
 

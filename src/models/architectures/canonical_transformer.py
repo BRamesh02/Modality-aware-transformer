@@ -13,16 +13,33 @@ class CanonicalTransformer(nn.Module):
     - Entrée decoder (train): [BOS, y_t, ..., y_{t+H-1}] (H+1 tokens)
     - Sortie: prédictions y_{t+1}..y_{t+H} via états 1..H
     """
-    def __init__(self, num_input_dim: int, n_sent: int,
-                 d_model: int, nhead: int,
-                 enc_layers: int, dec_layers: int,
-                 dropout: float, forecast_horizon: int = 1, use_emb: bool = True):
+
+    def __init__(
+        self,
+        num_input_dim: int,
+        n_sent: int,
+        d_model: int,
+        nhead: int,
+        enc_layers: int,
+        dec_layers: int,
+        dropout: float,
+        forecast_horizon: int = 1,
+        use_emb: bool = True,
+    ):
         super().__init__()
         self.H = forecast_horizon
         self.d_model = d_model
-        
+
         self.use_emb = use_emb
-        self.encoder = CanonicalEncoder(num_input_dim, n_sent, d_model, nhead, enc_layers, dropout , use_emb=self.use_emb,)
+        self.encoder = CanonicalEncoder(
+            num_input_dim,
+            n_sent,
+            d_model,
+            nhead,
+            enc_layers,
+            dropout,
+            use_emb=self.use_emb,
+        )
 
         self.y_in_proj = nn.Sequential(
             nn.Linear(1, d_model),
@@ -34,7 +51,7 @@ class CanonicalTransformer(nn.Module):
         self.bos = nn.Parameter(torch.zeros(1, 1, d_model))
 
         self.tgt_pos = PositionalEncoding(d_model, dropout)
-        
+
         self.decoder = CanonicalDecoder(d_model, nhead, dec_layers, dropout)
 
         self.head = nn.Sequential(
@@ -55,18 +72,20 @@ class CanonicalTransformer(nn.Module):
         assert H == self.H
 
         if self.use_emb and x_emb is None:
-            raise ValueError("CanonicalTransformer(use_emb=True) requires x_emb, got None.")
-        
+            raise ValueError(
+                "CanonicalTransformer(use_emb=True) requires x_emb, got None."
+            )
+
         memory = self.encoder(x_num, x_sent, x_emb)  # [B,T,D]
 
         # tgt_tokens = [BOS, y_t..y_{t+H-1}] => longueur H+1
-        y_emb = self.y_in_proj(y_hist.unsqueeze(-1))          # [B,H,D]
+        y_emb = self.y_in_proj(y_hist.unsqueeze(-1))  # [B,H,D]
         tgt_tokens = torch.cat([self.bos.expand(B, 1, -1), y_emb], dim=1)  # [B,H+1,D]
 
         tgt_in = self.tgt_pos(tgt_tokens.transpose(0, 1)).transpose(0, 1)  # [B,H+1,D]
 
-        tgt_out = self.decoder(tgt_in, memory)              # [B,H+1,D]
-        y_hat = self.head(tgt_out[:, 1:, :]).squeeze(-1)    # [B,H]
+        tgt_out = self.decoder(tgt_in, memory)  # [B,H+1,D]
+        y_hat = self.head(tgt_out[:, 1:, :]).squeeze(-1)  # [B,H]
         return y_hat
 
     @torch.no_grad()
@@ -78,12 +97,13 @@ class CanonicalTransformer(nn.Module):
         """
         B = x_num.size(0)
         if self.use_emb and x_emb is None:
-            raise ValueError("CanonicalTransformer(use_emb=True) requires x_emb, got None.")
+            raise ValueError(
+                "CanonicalTransformer(use_emb=True) requires x_emb, got None."
+            )
         memory = self.encoder(x_num, x_sent, x_emb)
 
         tgt_tokens = torch.cat(
-            [self.bos.expand(B, 1, -1), self.y_in_proj(y0.view(B, 1, 1))],
-            dim=1
+            [self.bos.expand(B, 1, -1), self.y_in_proj(y0.view(B, 1, 1))], dim=1
         )  # [B,2,D]
 
         preds = []
@@ -94,7 +114,7 @@ class CanonicalTransformer(nn.Module):
             next_y = self.head(tgt_out[:, -1:, :]).squeeze(-1)  # [B,1]
             preds.append(next_y)
 
-            next_emb = self.y_in_proj(next_y.unsqueeze(-1))     # [B,1,D]
+            next_emb = self.y_in_proj(next_y.unsqueeze(-1))  # [B,1,D]
             tgt_tokens = torch.cat([tgt_tokens, next_emb], dim=1)
 
         return torch.cat(preds, dim=1)  # [B,H]

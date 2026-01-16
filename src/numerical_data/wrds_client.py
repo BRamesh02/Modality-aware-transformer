@@ -3,6 +3,7 @@ import pandas as pd
 from typing import List, Optional
 import os
 
+
 class WRDSClient:
     def __init__(self, username: Optional[str] = None):
         """
@@ -11,24 +12,26 @@ class WRDSClient:
         self.username = username or os.getenv("WRDS_USERNAME")
         self.db = wrds.Connection(wrds_username=self.username)
 
-    def get_ticker_to_permno_mapping(self, tickers: List[str], active_after: str = '2022-01-01') -> pd.DataFrame:
+    def get_ticker_to_permno_mapping(
+        self, tickers: List[str], active_after: str = "2022-01-01"
+    ) -> pd.DataFrame:
         """
         Fetches the historical Ticker -> PERMNO mapping from CRSP.
         Used to map the tickers in the GitHub/Wikipedia presence matrix to unique PERMNOs.
-        
+
         Args:
             tickers: List of ticker symbols (e.g., ['AAPL', 'MSFT']).
-            active_after: Date string. Optimization to avoid fetching 1960s data 
+            active_after: Date string. Optimization to avoid fetching 1960s data
                           for tickers that are currently active.
         """
-    
+
         if not tickers:
-            return pd.DataFrame(columns=['permno', 'ticker', 'namedt', 'nameenddt'])
+            return pd.DataFrame(columns=["permno", "ticker", "namedt", "nameenddt"])
 
         # Escape tickers for SQL
         safe_tickers = [t.replace("'", "") for t in tickers]
         ticker_str = "'" + "','".join(safe_tickers) + "'"
-        
+
         query = f"""
         SELECT
             permno,
@@ -40,14 +43,14 @@ class WRDSClient:
         WHERE ticker IN ({ticker_str})
         AND nameenddt >= '{active_after}'
         """
-        
+
         print(f"[WRDS] Fetching Ticker mapping for {len(tickers)} symbols...")
         df_map = self.db.raw_sql(query)
-        
-        df_map['namedt'] = pd.to_datetime(df_map['namedt'])
-        df_map['nameenddt'] = pd.to_datetime(df_map['nameenddt'])
-        df_map['permno'] = df_map['permno'].astype(int)
-        
+
+        df_map["namedt"] = pd.to_datetime(df_map["namedt"])
+        df_map["nameenddt"] = pd.to_datetime(df_map["nameenddt"])
+        df_map["permno"] = df_map["permno"].astype(int)
+
         return df_map
 
     def get_trading_dates(self, start_date: str) -> pd.Index:
@@ -60,16 +63,15 @@ class WRDSClient:
         FROM crsp.wrds_dsfv2_query 
         WHERE dlycaldt >= '{start_date}'
         """
-        
+
         print(f"[WRDS] Fetching trading dates starting {start_date}...")
         df = self.db.raw_sql(query)
-        
-        df['date'] = pd.to_datetime(df['date']).dt.normalize()
-        df = df.sort_values('date').drop_duplicates()
+
+        df["date"] = pd.to_datetime(df["date"]).dt.normalize()
+        df = df.sort_values("date").drop_duplicates()
         print(f"Found {len(df):,} valid trading days.")
         return df.set_index("date").index
-        
-    
+
     def get_daily_metrics_v2(self, permnos: list, start_date: str) -> pd.DataFrame:
         """
         Fetches daily price/volume data from crsp.wrds_dsfv2_query.
@@ -101,14 +103,14 @@ class WRDSClient:
             permno in ({permno_str})
             AND yyyymmdd >= {start_int}
         """
-        
+
         print(f"[WRDS] Fetching Price Data (DSF V2) for {len(permnos)} assets...")
         df = self.db.raw_sql(query)
-        df['date'] = pd.to_datetime(df['date'], format="%Y%m%d")
-        df['permno'] = df['permno'].astype(int)
-        
+        df["date"] = pd.to_datetime(df["date"], format="%Y%m%d")
+        df["permno"] = df["permno"].astype(int)
+
         return df
-    
+
     def get_ratios_data(self, permnos: list, start_date: str):
         """
         Fetches valuation ratios from two sources (CCM and IBES) for robust coverage.
@@ -118,7 +120,7 @@ class WRDSClient:
             return pd.DataFrame(), pd.DataFrame()
 
         permno_str = ",".join([str(p) for p in permnos])
-        
+
         cols = """
             permno,
             public_date,
@@ -137,8 +139,8 @@ class WRDSClient:
         """
         df_ccm = self.db.raw_sql(q_ccm)
         if not df_ccm.empty:
-            df_ccm['public_date'] = pd.to_datetime(df_ccm['public_date'])
-            df_ccm['permno'] = df_ccm['permno'].astype(int)
+            df_ccm["public_date"] = pd.to_datetime(df_ccm["public_date"])
+            df_ccm["permno"] = df_ccm["permno"].astype(int)
 
         print(f"[WRDS] Fetching Ratios (IBES) for {len(permnos)} assets...")
         q_ibes = f"""
@@ -148,26 +150,28 @@ class WRDSClient:
         """
         df_ibes = self.db.raw_sql(q_ibes)
         if not df_ibes.empty:
-            df_ibes['public_date'] = pd.to_datetime(df_ibes['public_date'])
-            df_ibes['permno'] = df_ibes['permno'].astype(int)
+            df_ibes["public_date"] = pd.to_datetime(df_ibes["public_date"])
+            df_ibes["permno"] = df_ibes["permno"].astype(int)
 
         return df_ccm, df_ibes
 
-    def get_industry_classifications(self, permnos: list, start_date: str) -> pd.DataFrame:
+    def get_industry_classifications(
+        self, permnos: list, start_date: str
+    ) -> pd.DataFrame:
         """
         Fetches ICB Industry codes for Sector Imputation.
         """
         permno_str = ",".join([str(p) for p in permnos])
         start_int = int(start_date.replace("-", ""))
-        
+
         query = f"""
         SELECT permno, yyyymmdd as date, icbindustry
         FROM crsp.wrds_dsfv2_query
         WHERE permno IN ({permno_str}) AND yyyymmdd >= {start_int}
         """
         df = self.db.raw_sql(query)
-        df['date'] = pd.to_datetime(df['date'], format="%Y%m%d")
-        df['permno'] = df['permno'].astype(int)
+        df["date"] = pd.to_datetime(df["date"], format="%Y%m%d")
+        df["permno"] = df["permno"].astype(int)
         return df
 
     def get_risk_free_rate(self, start_date: str) -> pd.DataFrame:
@@ -183,7 +187,7 @@ class WRDSClient:
         df = self.db.raw_sql(query)
         df["date"] = pd.to_datetime(df["date"])
         return df
-    
+
     def close(self):
         """Closes the WRDS connection."""
         self.db.close()

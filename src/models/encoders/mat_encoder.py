@@ -48,13 +48,13 @@ class MATEncoderLayer(nn.Module):
         )
         self.norm3_num = nn.LayerNorm(d_model)
         self.norm3_text = nn.LayerNorm(d_model)
-        
+
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x_num, x_text):
         # --- Step 1: Self Attention (Pre-Norm) ---
         # Normalize INPUT, then attend, then add to original input
-        
+
         # Num Stream
         x_n_norm = self.norm1_num(x_num)
         attn_n, _ = self.self_attn_num(x_n_norm, x_n_norm, x_n_norm)
@@ -72,11 +72,15 @@ class MATEncoderLayer(nn.Module):
 
         # Num looks at Text (Query=Num, Key/Value=Text)
         # Note: We use the normalized version of Text as keys/values for stability
-        attn_n_cross, _ = self.cross_attn_num(query=x_n_norm, key=x_t_norm, value=x_t_norm)
+        attn_n_cross, _ = self.cross_attn_num(
+            query=x_n_norm, key=x_t_norm, value=x_t_norm
+        )
         x_num = x_num + self.dropout(attn_n_cross)
 
         # Text looks at Num
-        attn_t_cross, _ = self.cross_attn_text(query=x_t_norm, key=x_n_norm, value=x_n_norm)
+        attn_t_cross, _ = self.cross_attn_text(
+            query=x_t_norm, key=x_n_norm, value=x_n_norm
+        )
         x_text = x_text + self.dropout(attn_t_cross)
 
         # --- Step 3: Feed Forward (Pre-Norm) ---
@@ -156,7 +160,7 @@ class MATEncoder(nn.Module):
                 for _ in range(num_layers)
             ]
         )
-        
+
         self.norm_final_num = nn.LayerNorm(d_model)
         self.norm_final_text = nn.LayerNorm(d_model)
 
@@ -187,7 +191,7 @@ class MATEncoder(nn.Module):
         # 5. Pass through Layers
         for layer in self.layers:
             h_num, h_text = layer(h_num, h_text)
-            
+
         # 6. Final Normalization (Crucial for Pre-Norm)
         h_num = self.norm_final_num(h_num)
         h_text = self.norm_final_text(h_text)

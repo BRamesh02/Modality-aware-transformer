@@ -34,13 +34,24 @@ class MAT(nn.Module):
 
         if encoder_type == "weighted":
             self.encoder = MATEncoderWeighted(
-                num_input_dim, n_sent, d_model, nhead, enc_layers, dropout,use_emb=self.use_emb
+                num_input_dim,
+                n_sent,
+                d_model,
+                nhead,
+                enc_layers,
+                dropout,
+                use_emb=self.use_emb,
             )
         else:
             self.encoder = MATEncoder(
-                num_input_dim, n_sent, d_model, nhead, enc_layers, dropout,use_emb=self.use_emb
+                num_input_dim,
+                n_sent,
+                d_model,
+                nhead,
+                enc_layers,
+                dropout,
+                use_emb=self.use_emb,
             )
- 
 
         self.decoder = MATDecoder(d_model, nhead, dec_layers, dropout)
 
@@ -83,7 +94,7 @@ class MAT(nn.Module):
         B = x_num.size(0)
         H = y_hist.size(1)
         assert H == self.H, f"y_hist horizon {H} != forecast_horizon {self.H}"
-        
+
         if self.use_emb and x_emb is None:
             raise ValueError("MAT(use_emb=True) requires x_emb, got None.")
         mem_num, mem_text = self.encoder(x_num, x_sent, x_emb)  # [B,T,D] each
@@ -94,8 +105,8 @@ class MAT(nn.Module):
         y_emb = self.y_in_proj(y_hist.unsqueeze(-1))  # [B,H,D]
         tgt_tokens = torch.cat([self.bos.expand(B, 1, -1), y_emb], dim=1)  # [B,H+1,D]
         tgt_in = self.tgt_pos(tgt_tokens.transpose(0, 1)).transpose(0, 1)  # [B,H+1,D]
-        tgt_out = self.decoder(tgt_in, mem_num, mem_text)                   # [B,H+1,D]
-        y_hat = self.head(tgt_out[:, 1:, :]).squeeze(-1)                    # [B,H]
+        tgt_out = self.decoder(tgt_in, mem_num, mem_text)  # [B,H+1,D]
+        y_hat = self.head(tgt_out[:, 1:, :]).squeeze(-1)  # [B,H]
         return y_hat
 
     @torch.no_grad()
@@ -121,8 +132,9 @@ class MAT(nn.Module):
 
         prev = y0  # [B]
 
-        tgt_tokens = torch.cat([self.bos.expand(B, 1, -1),
-                        self.y_in_proj(y0.view(B,1,1))], dim=1)  # [B,2,D]
+        tgt_tokens = torch.cat(
+            [self.bos.expand(B, 1, -1), self.y_in_proj(y0.view(B, 1, 1))], dim=1
+        )  # [B,2,D]
         preds = []
         for _ in range(self.H):
             tgt_in = self.tgt_pos(tgt_tokens.transpose(0, 1)).transpose(0, 1)

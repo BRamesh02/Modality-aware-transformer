@@ -46,7 +46,7 @@ class MATDecoderLayer(nn.Module):
             nn.Dropout(dropout),
         )
 
-        # Sub-layer 3: FFN 
+        # Sub-layer 3: FFN
         self.ff = nn.Sequential(
             nn.Linear(d_model, 4 * d_model),
             nn.GELU(),
@@ -61,12 +61,12 @@ class MATDecoderLayer(nn.Module):
 
     def forward(
         self,
-        tgt: torch.Tensor,        # [B, H, D] 
-        mem_num: torch.Tensor,    # [B, Tn, D]
-        mem_text: torch.Tensor,   # [B, Tt, D]
-        tgt_key_padding_mask: torch.Tensor | None = None,   # [B, H] optional
+        tgt: torch.Tensor,  # [B, H, D]
+        mem_num: torch.Tensor,  # [B, Tn, D]
+        mem_text: torch.Tensor,  # [B, Tt, D]
+        tgt_key_padding_mask: torch.Tensor | None = None,  # [B, H] optional
         mem_num_key_padding_mask: torch.Tensor | None = None,  # [B, Tn] optional
-        mem_text_key_padding_mask: torch.Tensor | None = None, # [B, Tt] optional
+        mem_text_key_padding_mask: torch.Tensor | None = None,  # [B, Tt] optional
     ) -> torch.Tensor:
         B, H, D = tgt.shape
         device = tgt.device
@@ -74,7 +74,9 @@ class MATDecoderLayer(nn.Module):
         # Sub-layer 1: Masked MHA on target sequence (Eq. 3.17-3.19)
         attn_mask = causal_mask(H, device=device)
         tgt_ctx, _ = self.self_attn_tar(
-            query=tgt, key=tgt, value=tgt,
+            query=tgt,
+            key=tgt,
+            value=tgt,
             attn_mask=attn_mask,
             key_padding_mask=tgt_key_padding_mask,
             need_weights=False,
@@ -86,12 +88,16 @@ class MATDecoderLayer(nn.Module):
         # Key/Value = modality memory (already feature-weighted by encoder)
 
         ctx_n, _ = self.cross_num(
-            query=tgt, key=mem_num, value=mem_num,
+            query=tgt,
+            key=mem_num,
+            value=mem_num,
             key_padding_mask=mem_num_key_padding_mask,
             need_weights=False,
         )
         ctx_t, _ = self.cross_text(
-            query=tgt, key=mem_text, value=mem_text,
+            query=tgt,
+            key=mem_text,
+            value=mem_text,
             key_padding_mask=mem_text_key_padding_mask,
             need_weights=False,
         )
@@ -104,17 +110,31 @@ class MATDecoderLayer(nn.Module):
         tgt = self.norm2(tgt + self.drop(ff))
 
         return tgt
-    
+
+
 class MATDecoder(nn.Module):
     def __init__(self, d_model=int, nhead=int, num_layers=int, dropout=float):
         super().__init__()
-        self.layers = nn.ModuleList([MATDecoderLayer(d_model, nhead, dropout) for _ in range(num_layers)])
+        self.layers = nn.ModuleList(
+            [MATDecoderLayer(d_model, nhead, dropout) for _ in range(num_layers)]
+        )
 
-    def forward(self, tgt, mem_num, mem_text,
-                tgt_key_padding_mask=None, mem_num_key_padding_mask=None, mem_text_key_padding_mask=None):
+    def forward(
+        self,
+        tgt,
+        mem_num,
+        mem_text,
+        tgt_key_padding_mask=None,
+        mem_num_key_padding_mask=None,
+        mem_text_key_padding_mask=None,
+    ):
         for layer in self.layers:
-            tgt = layer(tgt, mem_num, mem_text,
-                        tgt_key_padding_mask=tgt_key_padding_mask,
-                        mem_num_key_padding_mask=mem_num_key_padding_mask,
-                        mem_text_key_padding_mask=mem_text_key_padding_mask)
+            tgt = layer(
+                tgt,
+                mem_num,
+                mem_text,
+                tgt_key_padding_mask=tgt_key_padding_mask,
+                mem_num_key_padding_mask=mem_num_key_padding_mask,
+                mem_text_key_padding_mask=mem_text_key_padding_mask,
+            )
         return tgt

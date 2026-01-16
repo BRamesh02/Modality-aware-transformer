@@ -20,23 +20,26 @@ from src.training.runner import run_walk_forward
 # Suppress Python Warnings (UserWarning, FutureWarning) from PyTorch internal modules
 warnings.filterwarnings("ignore", category=UserWarning, module="torch._inductor")
 warnings.filterwarnings("ignore", category=UserWarning, module="torch.backends.cuda")
-warnings.filterwarnings("ignore", category=UserWarning, module="torch.nn.modules.transformer")
+warnings.filterwarnings(
+    "ignore", category=UserWarning, module="torch.nn.modules.transformer"
+)
 warnings.filterwarnings("ignore", category=FutureWarning, module="torch.amp")
 
 # Suppress Low-Level Torch Compile/Inductor Debug Info
-os.environ["TORCH_LOGS"] = "-all"             # Disable all torch.compile logs
-os.environ["TORCH_COMPILE_DEBUG"] = "0"       # Disable debug artifacts
-os.environ["TORCH_CPP_LOG_LEVEL"] = "ERROR"   # Only show C++ errors, no info/warnings
+os.environ["TORCH_LOGS"] = "-all"  # Disable all torch.compile logs
+os.environ["TORCH_COMPILE_DEBUG"] = "0"  # Disable debug artifacts
+os.environ["TORCH_CPP_LOG_LEVEL"] = "ERROR"  # Only show C++ errors, no info/warnings
 
 # Suppress standard logging libraries if they leak through
 logging.getLogger("torch._inductor").setLevel(logging.ERROR)
+
 
 def seed_everything(seed=42):
     """
     Sets the random seed for Python, NumPy, and PyTorch to ensure reproducibility.
     """
     random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -44,45 +47,48 @@ def seed_everything(seed=42):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
+
 def main():
     print("Loading Main Data (This may take a minute)...")
     data_dir = PROJECT_ROOT / "data"
-    df_main = load_and_merge_data(data_dir, start_date=CONFIG["start_date"], end_date=CONFIG["end_date"])
-    
-    print("\n" + "="*50)
-    print("Seeding & Starting MAT Training...")
-    print("="*50)
-    seed_everything(42)
-    
-    df_mat = run_walk_forward(
-        df_main=df_main,
-        model_type="MAT",
-        config=CONFIG,
-        project_root=PROJECT_ROOT
+    df_main = load_and_merge_data(
+        data_dir, start_date=CONFIG["start_date"], end_date=CONFIG["end_date"]
     )
-    
+
+    print("\n" + "=" * 50)
+    print("Seeding & Starting MAT Training...")
+    print("=" * 50)
+    seed_everything(42)
+
+    df_mat = run_walk_forward(
+        df_main=df_main, model_type="MAT", config=CONFIG, project_root=PROJECT_ROOT
+    )
+
     save_path_mat = data_dir / "processed" / "predictions" / "mat_walkforward.parquet"
     save_path_mat.parent.mkdir(parents=True, exist_ok=True)
     df_mat.to_parquet(save_path_mat)
     print(f"MAT Results saved to {save_path_mat}")
 
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("Re-Seeding & Starting Canonical Training...")
-    print("="*50)
+    print("=" * 50)
     seed_everything(42)
-    
+
     df_can = run_walk_forward(
         df_main=df_main,
         model_type="Canonical",
         config=CONFIG,
-        project_root=PROJECT_ROOT
+        project_root=PROJECT_ROOT,
     )
-    
-    save_path_can = data_dir / "processed" / "predictions" / "canonical_walkforward.parquet"
+
+    save_path_can = (
+        data_dir / "processed" / "predictions" / "canonical_walkforward.parquet"
+    )
     df_can.to_parquet(save_path_can)
     print(f"Canonical Results saved to {save_path_can}")
 
     print("\nFull Inference Run Complete.")
+
 
 if __name__ == "__main__":
     main()

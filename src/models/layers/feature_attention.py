@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class FeatureAttention(nn.Module):
     """
     Section 3.2.1: Feature-Level Attention.

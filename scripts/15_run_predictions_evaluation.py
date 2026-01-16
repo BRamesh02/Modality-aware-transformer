@@ -9,6 +9,7 @@ sys.path.append(str(PROJECT_ROOT))
 from src.models.config import CONFIG
 from src.evaluation.predictions.evaluator import ModelEvaluator
 
+
 def main():
     print("--- Step 15: Evaluating Models' Predictions ---")
 
@@ -18,7 +19,9 @@ def main():
 
     if not mat_path.exists() or not can_path.exists():
         print(f"\nCRITICAL ERROR: Prediction files not found in {data_dir}")
-        print("   Please run 'scripts/13_run_training.py' or '14_run_inference_only.py' first.")
+        print(
+            "   Please run 'scripts/13_run_training.py' or '14_run_inference_only.py' first."
+        )
         return
 
     print(f"\nLoading predictions...")
@@ -66,14 +69,18 @@ def main():
 
     evaluator = ModelEvaluator(PROJECT_ROOT)
 
-    print("\n" + "-"*40)
+    print("\n" + "-" * 40)
     print(f"STEP 1: Individual Model Reports (Focus: H={primary_h})")
     print("-" * 40)
 
-    evaluator.evaluate_single_model(df_pred=df_mat, model_name="MAT", primary_horizon=primary_h)
-    evaluator.evaluate_single_model(df_pred=df_can, model_name="Canonical", primary_horizon=primary_h)
+    evaluator.evaluate_single_model(
+        df_pred=df_mat, model_name="MAT", primary_horizon=primary_h
+    )
+    evaluator.evaluate_single_model(
+        df_pred=df_can, model_name="Canonical", primary_horizon=primary_h
+    )
 
-    print("\n" + "-"*40)
+    print("\n" + "-" * 40)
     print("STEP 2: Comparison (Canonical vs MAT)")
     print("-" * 40)
 
@@ -87,6 +94,7 @@ def main():
     print("\nEvaluation Complete.")
     print(f"   Tables saved to:  {evaluator.tables_dir}")
     print(f"   Figures saved to: {evaluator.figures_dir}")
+
 
 if __name__ == "__main__":
     main()

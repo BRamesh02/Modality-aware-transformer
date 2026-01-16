@@ -2,9 +2,10 @@ import pandas as pd
 import numpy as np
 from typing import Dict
 
+
 class SignalFactory:
     """
-    A factory class to transform raw Long-Format model predictions 
+    A factory class to transform raw Long-Format model predictions
     into tradeable Wide-Format signal matrices (Index=Date, Columns=Permno).
     """
 
@@ -15,16 +16,18 @@ class SignalFactory:
                         Must contain columns: ['date_forecast', 'permno', 'horizon', 'pred']
         """
         self.raw_df = df_results.copy()
-        
-        if 'date_forecast' in self.raw_df.columns:
-            if not pd.api.types.is_datetime64_any_dtype(self.raw_df['date_forecast']):
-                self.raw_df['date_forecast'] = pd.to_datetime(self.raw_df['date_forecast'])
-        
-        print("   [SignalFactory] Pivoting raw predictions into multi-horizon tensor...")
+
+        if "date_forecast" in self.raw_df.columns:
+            if not pd.api.types.is_datetime64_any_dtype(self.raw_df["date_forecast"]):
+                self.raw_df["date_forecast"] = pd.to_datetime(
+                    self.raw_df["date_forecast"]
+                )
+
+        print(
+            "   [SignalFactory] Pivoting raw predictions into multi-horizon tensor..."
+        )
         self.df_wide = self.raw_df.pivot(
-            index=['date_forecast', 'permno'], 
-            columns='horizon', 
-            values='pred'
+            index=["date_forecast", "permno"], columns="horizon", values="pred"
         )
 
     def get_signal(self, strategy_name: str) -> pd.DataFrame:
@@ -36,18 +39,20 @@ class SignalFactory:
             print(f"   [SignalFactory] Building Strategy: {strategy_name}")
             return getattr(self, method_name)()
         else:
-            raise ValueError(f"Strategy '{strategy_name}' not implemented in SignalFactory.")
+            raise ValueError(
+                f"Strategy '{strategy_name}' not implemented in SignalFactory."
+            )
 
     def get_all_signals(self) -> Dict[str, pd.DataFrame]:
         """
         Returns a dictionary of all available strategy matrices.
         """
         strategies = [
-            "h1_only", 
-            "h1_h5_mean", 
-            "h1_h10_mean", 
-            "smart_decay", 
-            "conviction"
+            "h1_only",
+            "h1_h5_mean",
+            "h1_h10_mean",
+            "smart_decay",
+            "conviction",
         ]
         return {strat: self.get_signal(strat) for strat in strategies}
 
@@ -80,18 +85,18 @@ class SignalFactory:
         return self.df_wide.loc[:, 1:10].mean(axis=1).unstack()
 
     def _build_smart_decay(self) -> pd.DataFrame:
-            """
-            Strategy 4: The 'Smart Decay' (H=1 to H=10)
-            Inverse Horizon Weighting (1/h).
-            Gives H=1 full weight (1.0), H=2 (0.5) ... H=10 (0.1).
-            Pros: Balances immediate accuracy (H1) with short-term trend stability.
-            """
-            horizons = np.arange(1, 11) 
-            weights = 1 / horizons
-            weights = weights / weights.sum()
-            decay_score = self.df_wide.loc[:, 1:10].dot(weights)
-            
-            return decay_score.unstack()
+        """
+        Strategy 4: The 'Smart Decay' (H=1 to H=10)
+        Inverse Horizon Weighting (1/h).
+        Gives H=1 full weight (1.0), H=2 (0.5) ... H=10 (0.1).
+        Pros: Balances immediate accuracy (H1) with short-term trend stability.
+        """
+        horizons = np.arange(1, 11)
+        weights = 1 / horizons
+        weights = weights / weights.sum()
+        decay_score = self.df_wide.loc[:, 1:10].dot(weights)
+
+        return decay_score.unstack()
 
     def _build_conviction(self) -> pd.DataFrame:
         """
@@ -103,7 +108,7 @@ class SignalFactory:
         h1 = self.df_wide[1]
         h5 = self.df_wide[5]
         concordance_mask = (h1 * h5) > 0
-        
+
         conviction_score = h1.where(concordance_mask, 0.0)
-        
+
         return conviction_score.unstack()

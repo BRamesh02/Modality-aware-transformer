@@ -226,6 +226,8 @@ Modality-aware-transformer/
 <summary><strong>Step 1 — Install dependencies</strong></summary>
 
 ```bash
+git clone https://github.com/BRamesh02/Modality-aware-transformer.git
+cd Modality-aware-transformer
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
