@@ -8,42 +8,53 @@ from src.models.layers.positional_encoding import PositionalEncoding
 
 class MAT(nn.Module):
     """
-    MAT encoder-decoder autoregressif (sans LearnedQuery).
+    Autoregressive MAT encoder-decoder (no LearnedQuery).
     - Encoder: mem_num, mem_text
-    - Decoder: attend un tgt [B,H,D] (embeddings de target, masqués causalement)
-    - Head: projette chaque état tgt -> y_hat
+    - Decoder: expects tgt [B,H,D] (target embeddings, causally masked)
+    - Head: projects each tgt state -> y_hat
     """
 
     def __init__(
         self,
         num_input_dim: int,
         n_sent: int,
-        d_model: int = 128,
-        nhead: int = 4,
-        enc_layers: int = 2,
-        dec_layers: int = 2,
-        dropout: float = 0.2,
-        forecast_horizon: int = 1,
+        d_model: int,
+        nhead: int,
+        enc_layers: int,
+        dec_layers: int,
+        dropout: float,
+        forecast_horizon: int,
         encoder_type=None,
+        use_emb: bool = True,
     ):
         super().__init__()
+        self.use_emb = use_emb
         self.H = forecast_horizon
         self.d_model = d_model
 
         if encoder_type == "weighted":
             self.encoder = MATEncoderWeighted(
-                num_input_dim, n_sent, d_model, nhead, enc_layers, dropout
+                num_input_dim,
+                n_sent,
+                d_model,
+                nhead,
+                enc_layers,
+                dropout,
+                use_emb=self.use_emb,
             )
         else:
             self.encoder = MATEncoder(
-                num_input_dim, n_sent, d_model, nhead, enc_layers, dropout
+                num_input_dim,
+                n_sent,
+                d_model,
+                nhead,
+                enc_layers,
+                dropout,
+                use_emb=self.use_emb,
             )
- 
 
         self.decoder = MATDecoder(d_model, nhead, dec_layers, dropout)
 
-        # --- Target embedding (scalar -> d_model) ---
-        # y_t (1 dim) -> embedding dim D
         self.y_in_proj = nn.Sequential(
             nn.Linear(1, d_model),
             nn.LayerNorm(d_model),
@@ -53,10 +64,8 @@ class MAT(nn.Module):
 
         self.tgt_pos = PositionalEncoding(d_model, dropout)
 
-        # BOS token (start of decoding)
         self.bos = nn.Parameter(torch.zeros(1, 1, d_model))
 
-        # Regression head applied at each horizon step
         self.head = nn.Sequential(
             nn.Linear(d_model, 64),
             nn.GELU(),
@@ -68,17 +77,17 @@ class MAT(nn.Module):
         self,
         x_num: torch.Tensor,
         x_sent: torch.Tensor,
-        x_emb: torch.Tensor,
-        y_hist: torch.Tensor,
+        x_emb: torch.Tensor = None,
+        y_hist: torch.Tensor = None,
     ) -> torch.Tensor:
         """
         Teacher forcing forward.
 
         Args:
-            x_* : inputs [B,T,...]
-            y_hist: [B,H] = valeurs "connues" utilisées comme entrée du décodeur (décalées)
-                    Exemple standard: y_hist = [y_t, y_{t+1}, ..., y_{t+H-1}] pour prédire
-                    [y_{t+1}, ..., y_{t+H}] (décalage d'un pas).
+            x_*: inputs [B,T,...]
+            y_hist: [B,H] known values used as decoder input (shifted).
+                Standard example: y_hist = [y_t, y_{t+1}, ..., y_{t+H-1}] to predict
+                [y_{t+1}, ..., y_{t+H}] (one-step shift).
         Returns:
             y_hat: [B,H]
         """
@@ -86,16 +95,18 @@ class MAT(nn.Module):
         H = y_hist.size(1)
         assert H == self.H, f"y_hist horizon {H} != forecast_horizon {self.H}"
 
+        if self.use_emb and x_emb is None:
+            raise ValueError("MAT(use_emb=True) requires x_emb, got None.")
         mem_num, mem_text = self.encoder(x_num, x_sent, x_emb)  # [B,T,D] each
 
         # Build tgt inputs: [B,H,D] = [BOS, embed(y_hist[:,:-1])] for strict 1-step shift
-        # Ici, y_hist est déjà "l'entrée" décalée. On construit:
+        # Here, y_hist is already the shifted input. We build:
         # tgt = [BOS] + embed(y_hist[:, :-1])  => longueur H
         y_emb = self.y_in_proj(y_hist.unsqueeze(-1))  # [B,H,D]
         tgt_tokens = torch.cat([self.bos.expand(B, 1, -1), y_emb], dim=1)  # [B,H+1,D]
         tgt_in = self.tgt_pos(tgt_tokens.transpose(0, 1)).transpose(0, 1)  # [B,H+1,D]
-        tgt_out = self.decoder(tgt_in, mem_num, mem_text)                   # [B,H+1,D]
-        y_hat = self.head(tgt_out[:, 1:, :]).squeeze(-1)                    # [B,H]
+        tgt_out = self.decoder(tgt_in, mem_num, mem_text)  # [B,H+1,D]
+        y_hat = self.head(tgt_out[:, 1:, :]).squeeze(-1)  # [B,H]
         return y_hat
 
     @torch.no_grad()
@@ -103,31 +114,33 @@ class MAT(nn.Module):
         self,
         x_num: torch.Tensor,
         x_sent: torch.Tensor,
-        x_emb: torch.Tensor,
-        y0: torch.Tensor,
+        x_emb: torch.Tensor = None,
+        y0: torch.Tensor = None,
     ) -> torch.Tensor:
         """
-        Inference autoregressive.
+        Autoregressive inference.
 
         Args:
-            y0: [B] = dernière valeur connue (ou un proxy) pour initialiser l'AR.
+            y0: [B] last known value (or proxy) to initialize the AR loop.
         Returns:
             y_hat: [B,H]
         """
         B = x_num.size(0)
+        if self.use_emb and x_emb is None:
+            raise ValueError("MAT(use_emb=True) requires x_emb, got None.")
         mem_num, mem_text = self.encoder(x_num, x_sent, x_emb)
 
         prev = y0  # [B]
 
-        tgt_tokens = torch.cat([self.bos.expand(B, 1, -1),
-                        self.y_in_proj(y0.view(B,1,1))], dim=1)  # [B,2,D]
+        tgt_tokens = torch.cat(
+            [self.bos.expand(B, 1, -1), self.y_in_proj(y0.view(B, 1, 1))], dim=1
+        )  # [B,2,D]
         preds = []
         for _ in range(self.H):
             tgt_in = self.tgt_pos(tgt_tokens.transpose(0, 1)).transpose(0, 1)
             tgt_out = self.decoder(tgt_in, mem_num, mem_text)
             next_y = self.head(tgt_out[:, -1:, :]).squeeze(-1)  # [B,1]
             preds.append(next_y)
-            # just append predicted y for next step
             next_emb = self.y_in_proj(next_y.unsqueeze(-1))
             tgt_tokens = torch.cat([tgt_tokens, next_emb], dim=1)
         return torch.cat(preds, dim=1)

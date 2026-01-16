@@ -1,18 +1,17 @@
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 import pandas as pd
 from tqdm.auto import tqdm
 import shutil
 
-project_root = Path(__file__).resolve().parent.parent
-sys.path.append(str(project_root))
+current_dir = Path(__file__).resolve().parent
+PROJECT_ROOT = current_dir.parent
+sys.path.append(str(PROJECT_ROOT))
 
 from src.fnspid.text_functions import clean_str, norm_url, same_or_next_trading_day_nyse
 
-IN_DIR = project_root / "data" / "raw" / "fnspid"
-OUT_DIR = project_root / "data" / "preprocessed" / "fnspid"
+IN_DIR = PROJECT_ROOT / "data" / "raw" / "fnspid"
+OUT_DIR = PROJECT_ROOT / "data" / "preprocessed" / "fnspid"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 DELETE_RAW = True  # Set to True only when everything is validated
@@ -40,11 +39,14 @@ FINAL_COLS = [
     "url",
 ]
 
+
 def _safe_clean_series(s: pd.Series) -> pd.Series:
     return s.map(clean_str)
 
+
 def _compute_text_len_words(s: pd.Series) -> pd.Series:
     return s.fillna("").str.split().str.len().astype("int32")
+
 
 def _out_name(a: str, b: str) -> str:
     return f"preprocessed_{a[:4]}_{b[:4]}.parquet"
@@ -92,14 +94,15 @@ def main() -> None:
     all_df["publication_date"] = pub_day.dt.date
 
     all_df["effective_date"] = all_df["publication_date"].map(
-        lambda d: same_or_next_trading_day_nyse(d).isoformat() if d is not None else None
+        lambda d: (
+            same_or_next_trading_day_nyse(d).isoformat() if d is not None else None
+        )
     )
 
     before = len(all_df)
 
     all_df = all_df.drop_duplicates(
-        subset=["url", "stock_symbol", "dt_utc"],
-        keep="first"
+        subset=["url", "stock_symbol", "dt_utc"], keep="first"
     )
 
     dropped_dups = before - len(all_df)
@@ -133,10 +136,7 @@ def main() -> None:
         if g.empty:
             continue
 
-        g = g.sort_values(
-            by=["effective_date", "stock_symbol"],
-            kind="mergesort"
-        )
+        g = g.sort_values(by=["effective_date", "stock_symbol"], kind="mergesort")
 
         out_path = OUT_DIR / _out_name(a, b)
         g.to_parquet(out_path, index=False, compression="snappy")

@@ -3,6 +3,7 @@ import pandas as pd
 from fredapi import Fred
 from typing import Optional
 
+
 class FredClient:
     def __init__(self, api_key: Optional[str] = None):
         """
@@ -11,7 +12,7 @@ class FredClient:
         self.api_key = api_key or os.getenv("FRED_API_KEY")
         if not self.api_key:
             raise ValueError("FRED_API_KEY not found in environment variables.")
-        
+
         self.client = Fred(api_key=self.api_key)
 
     def get_first_release(self, series_id: str) -> pd.Series:

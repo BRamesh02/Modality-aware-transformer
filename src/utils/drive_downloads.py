@@ -28,11 +28,11 @@ def download_drive_files(file_map, out_dir, prefix="", sleep_sec=1.5, ext=".parq
             out = out_dir / f"{prefix}{ext}"
             p = _download_one(file_map[0], out, sleep_sec)
             return [p] if p is not None else []
-    
+
         for i, fid in enumerate(file_map):
             out = out_dir / f"{prefix}_{i}{ext}"
             paths.append(_download_one(fid, out, sleep_sec))
-            
+
     elif isinstance(file_map, dict):
         for key, fid in file_map.items():
             safe_key = key.replace("/", "_")
@@ -40,7 +40,7 @@ def download_drive_files(file_map, out_dir, prefix="", sleep_sec=1.5, ext=".parq
                 out_name = f"{prefix}_{safe_key}{ext}"
             else:
                 out_name = f"{safe_key}{ext}"  # Just the key (e.g., "target.parquet")
-                
+
             out = out_dir / out_name
             paths.append(_download_one(fid, out, sleep_sec))
     else:
