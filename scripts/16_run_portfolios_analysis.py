@@ -85,7 +85,9 @@ def main():
                 "Strategy": strat_name,
                 "Sharpe": stats['Sharpe Ratio'],
                 "Ann. Return": stats['Annualized Return'],
-                "Turnover": stats['Ann. Turnover']
+                "Ann. Vol": stats['Annualized Vol'],      
+                "Max Drawdown": stats['Max Drawdown'],    
+                "Turnover": stats['Ann. Turnover']        
             })
             
             if stats['Sharpe Ratio'] > best_strategies[model_name][1]:
