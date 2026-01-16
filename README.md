@@ -243,13 +243,14 @@ FRED_API_KEY=your_fred_key
 
 Notes:
 - WRDS is required for numerical data ( in Scripts 1-3 (Option B) and 7).
-- FRED is optional; Step 4 will skip macro features if `FRED_API_KEY` is missing.
+- FRED is optional : Step 4 will skip macro features if `FRED_API_KEY` is missing.
 </details>
 
 <details>
 <summary><strong>Step 3 — Choose your data source</strong></summary>
 
-Option A: download prebuilt artifacts from Google Drive
+Option A : download prebuilt artifacts from Google Drive
+
 Note: place `drive_ids.json` in `config/` at the repo root before running this.
 
 ```bash
@@ -261,7 +262,7 @@ In the menu, you can also select **Predictions (or 3)** to download
 `data/processed/predictions/canonical_walkforward.parquet`. If you do this, you can
 skip Steps 4–7 and go directly to Step 8 to regenerate prediction tables/figures.
 
-Option B: build datasets from scratch (run in order)
+Option B : build datasets from scratch (run in order)
 
 Numerical pipeline:
 ```bash
@@ -288,7 +289,7 @@ Notes:
 </details>
 
 <details>
-<summary><strong>Step 4 — Build the merged dataset (numerical + text)</strong></summary>
+<summary><strong> Step 4 — Build the merged dataset (numerical + text)</strong></summary>
 
 ```bash
 python - <<'PY'
