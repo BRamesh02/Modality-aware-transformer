@@ -3,6 +3,7 @@ import torch.nn as nn
 from src.models.layers.feature_attention import FeatureAttention
 from src.models.layers.positional_encoding import PositionalEncoding
 
+
 class MATEncoderLayer(nn.Module):
     """
     A single layer of the MAT Encoder using Pre-Norm Architecture.
@@ -44,7 +45,7 @@ class MATEncoderLayer(nn.Module):
         )
         self.norm3_num = nn.LayerNorm(d_model)
         self.norm3_text = nn.LayerNorm(d_model)
-        
+
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x_num, x_text):
@@ -59,10 +60,14 @@ class MATEncoderLayer(nn.Module):
         x_n_norm = self.norm2_num(x_num)
         x_t_norm = self.norm2_text(x_text)
 
-        attn_n_cross, _ = self.cross_attn_num(query=x_n_norm, key=x_t_norm, value=x_t_norm)
+        attn_n_cross, _ = self.cross_attn_num(
+            query=x_n_norm, key=x_t_norm, value=x_t_norm
+        )
         x_num = x_num + self.dropout(attn_n_cross)
 
-        attn_t_cross, _ = self.cross_attn_text(query=x_t_norm, key=x_n_norm, value=x_n_norm)
+        attn_t_cross, _ = self.cross_attn_text(
+            query=x_t_norm, key=x_n_norm, value=x_n_norm
+        )
         x_text = x_text + self.dropout(attn_t_cross)
 
         x_n_norm = self.norm3_num(x_num)
@@ -74,7 +79,7 @@ class MATEncoderLayer(nn.Module):
         x_text = x_text + self.dropout(ff_t)
 
         return x_num, x_text
-    
+
 
 class MATEncoderWeighted(nn.Module):
     def __init__(
@@ -90,7 +95,7 @@ class MATEncoderWeighted(nn.Module):
         use_emb: bool = True,
     ):
         super().__init__()
-        
+
         self.use_emb = use_emb
 
         self.num_feat_attn = FeatureAttention(num_input_dim)
@@ -99,10 +104,10 @@ class MATEncoderWeighted(nn.Module):
 
         self.num_weight_proj = nn.Sequential(
             nn.Linear(num_input_dim, d_model),
-            nn.Sigmoid(), 
+            nn.Sigmoid(),
         )
         self.text_weight_proj = nn.Sequential(
-             nn.Linear(text_feat_dim, d_model), nn.Sigmoid()
+            nn.Linear(text_feat_dim, d_model), nn.Sigmoid()
         )
 
         self.num_proj = nn.Sequential(
@@ -144,7 +149,7 @@ class MATEncoderWeighted(nn.Module):
                 for _ in range(num_layers)
             ]
         )
-        
+
         self.norm_final_num = nn.LayerNorm(d_model)
         self.norm_final_text = nn.LayerNorm(d_model)
 
@@ -159,31 +164,33 @@ class MATEncoderWeighted(nn.Module):
 
         if self.use_emb:
             if x_emb is None:
-                raise ValueError("MATEncoderWeighted(use_emb=True) requires x_emb, got None.")
+                raise ValueError(
+                    "MATEncoderWeighted(use_emb=True) requires x_emb, got None."
+                )
             t_emb = self.emb_proj(x_emb)
             x_text = torch.cat([t_sent, t_emb], dim=-1)
         else:
             x_text = t_sent
 
-        x_num, w_num = self.num_feat_attn(x_num)        
-        x_text, w_text = self.text_feat_attn(x_text)    
+        x_num, w_num = self.num_feat_attn(x_num)
+        x_text, w_text = self.text_feat_attn(x_text)
 
-        h_num = self.num_proj(x_num)        
-        h_text = self.text_proj(x_text)     
+        h_num = self.num_proj(x_num)
+        h_text = self.text_proj(x_text)
 
         h_num = self.pos_encoder(h_num.transpose(0, 1)).transpose(0, 1)
         h_text = self.pos_encoder(h_text.transpose(0, 1)).transpose(0, 1)
 
         for layer in self.layers:
             h_num, h_text = layer(h_num, h_text)
-            
+
         h_num = self.norm_final_num(h_num)
         h_text = self.norm_final_text(h_text)
 
         gate_num = self.num_weight_proj(w_num)
         gate_text = self.text_weight_proj(w_text)
 
-        h_num_final = h_num * gate_num      
-        h_text_final = h_text * gate_text   
+        h_num_final = h_num * gate_num
+        h_text_final = h_text * gate_text
 
         return h_num_final, h_text_final

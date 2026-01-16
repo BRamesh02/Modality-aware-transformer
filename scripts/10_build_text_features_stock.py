@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 
@@ -11,7 +9,7 @@ current_dir = Path(__file__).resolve().parent
 PROJECT_ROOT = current_dir.parent
 sys.path.append(str(PROJECT_ROOT))
 
-from src.fnspid.bert_features import (  
+from src.fnspid.bert_features import (
     extract_bin_suffix,
     process_bin_to_stock_date_features,
 )
@@ -33,8 +31,10 @@ def get_device() -> str:
         return "mps"
     return "cpu"
 
+
 DEVICE = get_device()
 print("Device:", DEVICE)
+
 
 def main() -> None:
     print("--- Step 10: Processing Raw FNSPID Text Data ---")
@@ -49,7 +49,9 @@ def main() -> None:
         raise FileNotFoundError(f"No preprocessed_*.parquet files found in {IN_DIR}")
 
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    clf_model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME).to(DEVICE)
+    clf_model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME).to(
+        DEVICE
+    )
     enc_model = AutoModel.from_pretrained(MODEL_NAME).to(DEVICE)
 
     for f in tqdm(files, desc="Bins → stock×date features", unit="file"):

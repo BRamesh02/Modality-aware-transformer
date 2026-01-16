@@ -9,6 +9,7 @@ sys.path.append(str(PROJECT_ROOT))
 from src.models.config import CONFIG
 from src.evaluation.predictions.evaluator import ModelEvaluator
 
+
 def main():
     print("--- Step 15: Evaluating Models' Predictions ---")
 
@@ -18,7 +19,9 @@ def main():
 
     if not mat_path.exists() or not can_path.exists():
         print(f"\nCRITICAL ERROR: Prediction files not found in {data_dir}")
-        print("   Please run 'scripts/13_run_training.py' or '14_run_inference_only.py' first.")
+        print(
+            "   Please run 'scripts/13_run_training.py' or '14_run_inference_only.py' first."
+        )
         return
 
     print(f"\nLoading predictions...")
@@ -31,7 +34,6 @@ def main():
         print(f"   Error loading parquet files: {e}")
         return
 
-    # --- Basic schema checks
     required = {"date_forecast", "permno", "pred", "target"}
     missing_mat = required - set(df_mat.columns)
     missing_can = required - set(df_can.columns)
@@ -42,11 +44,10 @@ def main():
         print(f"CRITICAL ERROR: Canonical missing columns: {missing_can}")
         return
 
-    # --- Make date safe for sorting/plots
     df_mat["date_forecast"] = pd.to_datetime(df_mat["date_forecast"], errors="coerce")
     df_can["date_forecast"] = pd.to_datetime(df_can["date_forecast"], errors="coerce")
 
-    # --- Determine primary horizon
+    # Determine primary horizon
     primary_h = CONFIG.get("primary_eval_horizon", 1)
 
     # Optional: sort for stable outputs
@@ -56,7 +57,7 @@ def main():
     df_mat = df_mat.sort_values(sort_cols).reset_index(drop=True)
     df_can = df_can.sort_values(sort_cols).reset_index(drop=True)
 
-    # --- Quick logs
+    # Quick logs
     print(f"   MAT unique dates: {df_mat['date_forecast'].nunique()}")
     print(f"   Canonical unique dates: {df_can['date_forecast'].nunique()}")
     if "horizon" in df_mat.columns:
@@ -66,14 +67,18 @@ def main():
 
     evaluator = ModelEvaluator(PROJECT_ROOT)
 
-    print("\n" + "-"*40)
+    print("\n" + "-" * 40)
     print(f"STEP 1: Individual Model Reports (Focus: H={primary_h})")
     print("-" * 40)
 
-    evaluator.evaluate_single_model(df_pred=df_mat, model_name="MAT", primary_horizon=primary_h)
-    evaluator.evaluate_single_model(df_pred=df_can, model_name="Canonical", primary_horizon=primary_h)
+    evaluator.evaluate_single_model(
+        df_pred=df_mat, model_name="MAT", primary_horizon=primary_h
+    )
+    evaluator.evaluate_single_model(
+        df_pred=df_can, model_name="Canonical", primary_horizon=primary_h
+    )
 
-    print("\n" + "-"*40)
+    print("\n" + "-" * 40)
     print("STEP 2: Comparison (Canonical vs MAT)")
     print("-" * 40)
 
@@ -87,6 +92,7 @@ def main():
     print("\nEvaluation Complete.")
     print(f"   Tables saved to:  {evaluator.tables_dir}")
     print(f"   Figures saved to: {evaluator.figures_dir}")
+
 
 if __name__ == "__main__":
     main()

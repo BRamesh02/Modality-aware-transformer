@@ -42,8 +42,7 @@ def compare_models(
     if df.empty:
         return None
 
-
-    # 1) DAILY MAE (one value per date, then averaged)
+    #  DAILY MAE (one value per date, then averaged)
 
     daily_mae_a = (
         df.groupby("date_forecast")
@@ -64,8 +63,7 @@ def compare_models(
     mae_a = float(mae_tmp["a"].mean()) if len(mae_tmp) else np.nan
     mae_b = float(mae_tmp["b"].mean()) if len(mae_tmp) else np.nan
 
-
-    # 2) DAILY IC + paired t-test
+    #  DAILY IC + paired t-test
 
     daily_ic_a = (
         df.groupby("date_forecast")
@@ -95,8 +93,7 @@ def compare_models(
         t_stat_ic, p_val_ic = 0.0, 1.0
         ic_a, ic_b = np.nan, np.nan
 
-
-    # 3) Diebold–Mariano test on DAILY loss (robust)
+    #  Diebold–Mariano test on DAILY loss (robust)
     #     model = challenger, benchmark = baseline
 
     df_a = df_base[merge_cols + ["target", "pred"]].copy()
@@ -117,8 +114,8 @@ def compare_models(
 
     return {
         "names": [name_a, name_b],
-        "MAE": [mae_a, mae_b],          # daily-averaged MAE
-        "IC": [ic_a, ic_b],             # daily-averaged IC
+        "MAE": [mae_a, mae_b],  # daily-averaged MAE
+        "IC": [ic_a, ic_b],  # daily-averaged IC
         "dm_stat": float(dm_stat),
         "p_val_dm": float(p_val_dm),
         "p_val_ic": float(p_val_ic),
@@ -158,25 +155,21 @@ def compare_horizons_decay(
         return pd.DataFrame()
 
     def _per_horizon(g):
-        daily_mae_a = (
-            g.groupby("date_forecast")
-            .apply(lambda d: np.mean(np.abs(d[f"pred_{name_a}"] - d["target"])))
+        daily_mae_a = g.groupby("date_forecast").apply(
+            lambda d: np.mean(np.abs(d[f"pred_{name_a}"] - d["target"]))
         )
-        daily_mae_b = (
-            g.groupby("date_forecast")
-            .apply(lambda d: np.mean(np.abs(d[f"pred_{name_b}"] - d["target"])))
+        daily_mae_b = g.groupby("date_forecast").apply(
+            lambda d: np.mean(np.abs(d[f"pred_{name_b}"] - d["target"]))
         )
         mae_tmp = pd.concat(
             [daily_mae_a.rename("a"), daily_mae_b.rename("b")], axis=1
         ).dropna()
 
-        daily_ic_a = (
-            g.groupby("date_forecast")
-            .apply(lambda d: d[f"pred_{name_a}"].corr(d["target"]))
+        daily_ic_a = g.groupby("date_forecast").apply(
+            lambda d: d[f"pred_{name_a}"].corr(d["target"])
         )
-        daily_ic_b = (
-            g.groupby("date_forecast")
-            .apply(lambda d: d[f"pred_{name_b}"].corr(d["target"]))
+        daily_ic_b = g.groupby("date_forecast").apply(
+            lambda d: d[f"pred_{name_b}"].corr(d["target"])
         )
         ic_tmp = pd.concat(
             [daily_ic_a.rename("a"), daily_ic_b.rename("b")], axis=1

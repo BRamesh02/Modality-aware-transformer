@@ -7,9 +7,17 @@ import re
 import hashlib
 
 DEFAULT_KEEP_FIELDS: List[str] = [
-    "Date", "Stock_symbol", "Url", "Publisher", "Author",
-    "Article_title", "Article",
-    "Textrank_summary", "Lexrank_summary", "Lsa_summary", "Luhn_summary",
+    "Date",
+    "Stock_symbol",
+    "Url",
+    "Publisher",
+    "Author",
+    "Article_title",
+    "Article",
+    "Textrank_summary",
+    "Lexrank_summary",
+    "Lsa_summary",
+    "Luhn_summary",
 ]
 
 WS_RE = re.compile(r"\s+")
@@ -17,11 +25,11 @@ WS_RE = re.compile(r"\s+")
 
 def clean_str(s: Any) -> Optional[str]:
     """
-    Nettoie une valeur potentiellement None :
-    - convertit en str
-    - normalise les espaces (incluant retours ligne, tabs) en espace simple
+    Clean a value that may be None:
+    - cast to str
+    - normalize whitespace (newlines, tabs) to single spaces
     - strip
-    - renvoie None si vide
+    - return None if empty
     """
     if s is None:
         return None
@@ -31,8 +39,8 @@ def clean_str(s: Any) -> Optional[str]:
 
 def parse_dt_utc(date_str: Any) -> Optional[datetime]:
     """
-    Parse les dates FNSPID de type: "2020-06-05 06:30:54 UTC"
-    Retourne un datetime timezone-aware en UTC, ou None si parsing impossible.
+    Parse FNSPID dates of the form: "2020-06-05 06:30:54 UTC".
+    Returns a timezone-aware UTC datetime, or None if parsing fails.
     """
     if date_str is None:
         return None
@@ -52,8 +60,8 @@ def parse_dt_utc(date_str: Any) -> Optional[datetime]:
 
 def make_projector(keep_fields: Sequence[str] = DEFAULT_KEEP_FIELDS):
     """
-    Renvoie une fonction `project(ex)` qui garde uniquement `keep_fields`.
-    Utile pour HF datasets: split.map(make_projector(...))
+    Return a `project(ex)` function that keeps only `keep_fields`.
+    Useful for HF datasets: split.map(make_projector(...)).
     """
     keep_fields = list(keep_fields)
 
@@ -65,8 +73,8 @@ def make_projector(keep_fields: Sequence[str] = DEFAULT_KEEP_FIELDS):
 
 def build_text_record(ex: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Transforme un exemple FNSPID brut en un dict standardisé.
-    Ici, on garde toutes les variantes de texte (article + résumés + titre).
+    Convert a raw FNSPID example into a standardized dict.
+    We keep all text variants (article + summaries + title).
     """
     title = clean_str(ex.get("Article_title"))
     article = clean_str(ex.get("Article"))
@@ -91,14 +99,13 @@ def build_text_record(ex: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-
 def is_valid_record(ex: Dict[str, Any], min_text_len: int = 20) -> bool:
     """
-    Filtre minimum :
-    - dt_utc OK
-    - stock_symbol OK
-    - au moins un champ texte non vide parmi (article, résumés, title)
-    - longueur minimale min_text_len
+    Minimum filter:
+    - valid dt_utc
+    - valid stock_symbol
+    - at least one non-empty text field among (article, summaries, title)
+    - minimum length min_text_len
     """
     if ex.get("dt_utc") is None:
         return False
@@ -120,9 +127,9 @@ def is_valid_record(ex: Dict[str, Any], min_text_len: int = 20) -> bool:
 
 def make_dedup_key(ex: Dict[str, Any]) -> str:
     """
-    Clef de dédoublonnage :
-    - priorité à l'URL si disponible,
-    - sinon hash de (stock_symbol, dt_utc, title).
+    Deduplication key:
+    - prefer URL if available
+    - otherwise hash (stock_symbol, dt_utc, title)
     """
     url = ex.get("url")
     if url:
@@ -143,7 +150,7 @@ def dedup_stream(
     max_seen: int = 500_000,
 ) -> Iterable[Dict[str, Any]]:
     """
-    Dédoublonnage approximatif en streaming via un cache borné.
+    Approximate streaming deduplication with a bounded cache.
     """
     from collections import deque
 
@@ -164,12 +171,8 @@ def dedup_stream(
         yield ex
 
 
-
 _nyse = mcal.get_calendar("NYSE")
-_nyse_schedule = _nyse.schedule(
-    start_date="1999-01-01",
-    end_date="2025-12-31"
-)
+_nyse_schedule = _nyse.schedule(start_date="1999-01-01", end_date="2025-12-31")
 _TRADING_DAYS = pd.DatetimeIndex(_nyse_schedule.index)
 
 
@@ -188,8 +191,7 @@ def add_effective_date(ex: Dict[str, Any]) -> Dict[str, Any]:
     """
     dt = ex.get("dt_utc")
     ex["effective_date"] = (
-        next_trading_day_nyse(dt.date()).isoformat()
-        if dt is not None else None
+        next_trading_day_nyse(dt.date()).isoformat() if dt is not None else None
     )
     return ex
 
@@ -219,8 +221,7 @@ def add_effective_date_keep_same(ex: Dict[str, Any]) -> Dict[str, Any]:
     """
     dt = ex.get("dt_utc")
     ex["effective_date"] = (
-        same_or_next_trading_day_nyse(dt.date()).isoformat()
-        if dt is not None else None
+        same_or_next_trading_day_nyse(dt.date()).isoformat() if dt is not None else None
     )
     return ex
 

@@ -3,6 +3,7 @@ import torch.nn as nn
 import math
 from src.models.layers.positional_encoding import PositionalEncoding
 
+
 class CanonicalEncoder(nn.Module):
     def __init__(
         self,
@@ -81,11 +82,13 @@ class CanonicalEncoder(nn.Module):
             memory: [Batch, 60, 128] (Single stream output)
         """
         x_n = self.num_proj(x_num)  # [Batch, 60, 64]
-        t_sent = self.sent_proj(x_sent)              # [B,T,32]
+        t_sent = self.sent_proj(x_sent)  # [B,T,32]
 
         if self.use_emb:
             if x_emb is None:
-                raise ValueError("CanonicalEncoder(use_emb=True) requires x_emb, got None.")
+                raise ValueError(
+                    "CanonicalEncoder(use_emb=True) requires x_emb, got None."
+                )
             t_emb = self.emb_proj(x_emb)  # [B,T,emb_dim]
             t_in = torch.cat([t_sent, t_emb], dim=-1)
         else:
