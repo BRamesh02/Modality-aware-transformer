@@ -9,7 +9,7 @@ sys.path.append(str(PROJECT_ROOT))
 
 from src.utils.drive_downloads import download_drive_files
 
-IDS_PATH = PROJECT_ROOT / "config" / "drive_ids.json"
+IDS_PATH = PROJECT_ROOT / "drive_ids.json"
 DATA_ROOT = PROJECT_ROOT / "data"
 
 SLEEP_SEC = 1.5
