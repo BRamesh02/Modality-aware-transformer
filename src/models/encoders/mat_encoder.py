@@ -52,8 +52,7 @@ class MATEncoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x_num, x_text):
-        # Step 1: Self Attention (Pre-Norm)
-        # Normalize INPUT, then attend, then add to original input
+        # Self Attention 
 
         # Num Stream
         x_n_norm = self.norm1_num(x_num)
@@ -65,8 +64,8 @@ class MATEncoderLayer(nn.Module):
         attn_t, _ = self.self_attn_text(x_t_norm, x_t_norm, x_t_norm)
         x_text = x_text + self.dropout(attn_t)
 
-        # --- Step 2: Cross Attention (Pre-Norm) ---
-        # Normalize residual input before Cross Attn
+        # Cross Attention 
+
         x_n_norm = self.norm2_num(x_num)
         x_t_norm = self.norm2_text(x_text)
 
@@ -83,7 +82,7 @@ class MATEncoderLayer(nn.Module):
         )
         x_text = x_text + self.dropout(attn_t_cross)
 
-        # Step 3: Feed Forward (Pre-Norm)
+        # Feed Forward 
         x_n_norm = self.norm3_num(x_num)
         ff_n = self.ff_num(x_n_norm)
         x_num = x_num + self.dropout(ff_n)
