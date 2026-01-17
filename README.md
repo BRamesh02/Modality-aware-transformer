@@ -250,7 +250,7 @@ Notes:
   <details>
   <summary><strong>Option A — Download prebuilt artifacts from Google Drive</strong></summary>
 
-  Note: place `drive_ids.json` in `config/` at the repo root before running this.
+  Note: place `drive_ids.json` at the repo root before running this.
 
   ```bash
   python scripts/12_gather_data_from_drive.py
