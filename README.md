@@ -69,8 +69,7 @@ Modality-aware-transformer/
 
 ```text
 ├─ MAT/                              # MAT checkpoints per test year
-├─ Canonical/                        # Canonical checkpoints per test year
-└─ mat_best.pt                       # Legacy/single checkpoint
+└─ Canonical/                        # Canonical checkpoints per test year
 ```
 </details>
 
@@ -134,7 +133,7 @@ Modality-aware-transformer/
   │  ├─ metrics.py                  # Prediction metrics
   │  └─ plots.py                    # Prediction plots
   └─ portfolio/
-     ├─ attribution.py              # Performance attribution metrics
+     ├─ attribution.py              # PnL's factor attribution
      ├─ backtest.py                 # Portfolio backtesting logic
      ├─ performance.py              # Return and risk metrics
      ├─ plots.py                    # Portfolio analysis plots
