@@ -47,6 +47,7 @@ Modality-aware-transformer/
 ├─ data/                             # Raw and processed datasets
 ├─ models/                           # Saved weights (walk-forward checkpoints)
 ├─ reports/                          # Tables and figures from evaluations
+├─ notebooks/                        # Exploratory notebooks
 ├─ scripts/                          # Data pipeline and execution
 └─ src/                              # Core library
 ```
@@ -84,6 +85,14 @@ Modality-aware-transformer/
 └─ portfolio_analysis/
    ├─ tables/                        # Portfolio analysis tables
    └─ figures/                       # Portfolio analysis plots
+```
+</details>
+
+<details>
+<summary><strong>notebooks/</strong></summary>
+
+```text
+└─ text_data.ipynb                   # Text data exploration 
 ```
 </details>
 
@@ -298,6 +307,8 @@ PY
 If the linked text file name differs, align it with the loader expectation in
 `src/utils/data_loader.py` (the loader reads
 `data/processed/fnspid/process_and_linked_text_features.parquet`).
+
+Note: You can also see an exemple of creating the merged dataset in `notebooks/data.ipynb`
 </details>
 
 <details>
