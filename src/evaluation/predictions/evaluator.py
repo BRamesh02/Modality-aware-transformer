@@ -61,7 +61,6 @@ class ModelEvaluator:
         self.figures_dir.mkdir(parents=True, exist_ok=True)
         self.tables_dir.mkdir(parents=True, exist_ok=True)
 
-    # Internal: evaluate one slice
 
     def _evaluate_slice(self, df_slice, model_name, horizon, is_primary=False):
         if df_slice is None or df_slice.empty:
@@ -106,7 +105,6 @@ class ModelEvaluator:
 
         return metrics
 
-    # Single-model evaluation
 
     def evaluate_single_model(self, df_pred, model_name="Model", primary_horizon=1):
         print(f"\nEvaluating model: {model_name}")
@@ -183,13 +181,12 @@ class ModelEvaluator:
             ordered + [c for c in df_summary.columns if c not in ordered]
         ]
 
-        # Distribution diagnostics: predictions vs targets
 
         if "horizon" in df_pred.columns:
             plot_prediction_vs_target_distribution_zscore_by_date(
                 df_pred=df_pred,
                 model_name=model_name,
-                horizons=[1, 2, 3, 4, 5],
+                horizons=[1, 3, 5, 8, 10],
                 save_dir=self.figures_dir,
                 min_assets_per_day=10,
                 clip_z=6.0,
@@ -201,7 +198,6 @@ class ModelEvaluator:
 
         return df_summary
 
-    # Model comparison
 
     def compare_models(
         self,
@@ -222,7 +218,6 @@ class ModelEvaluator:
             df_base_h = df_base
             df_chall_h = df_challenger
 
-        # Primary horizon plots + table
         if not df_base_h.empty and not df_chall_h.empty:
             res = compare_two_models(
                 df_base_h, df_chall_h, names[0], names[1], h=primary_horizon
@@ -248,7 +243,6 @@ class ModelEvaluator:
                 ylabel="Daily MAE",
             )
 
-            # Cumulative IC comparison (same style as plots.py)
             plot_cumulative_ic_compare(
                 {names[0]: daily_ic_base, names[1]: daily_ic_chall},
                 save_dir=self.figures_dir,
@@ -289,7 +283,6 @@ class ModelEvaluator:
                 summary.to_csv(out_path, index=False)
                 print(f"Primary horizon comparison saved to {out_path}")
 
-        # Horizon decay
         if "horizon" in df_base.columns and "horizon" in df_challenger.columns:
             df_decay = compare_horizons_decay(df_base, df_challenger, names)
 
