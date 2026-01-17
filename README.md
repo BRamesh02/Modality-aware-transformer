@@ -256,10 +256,12 @@ Notes:
   ```bash
   python scripts/12_gather_data_from_drive.py
   ```
-  Choose **1. Text Data (type 1)**, you can have access to all the data at each step. But for analysis choose **4. processed_and_linked (type 4)**.
-  Then re run the script, choose **2. Numerical Data (type 2)**, and then type **1. processed (type 1)**.
   
-  Note : In the menu, you can also select **Predictions (or 3)** to download the predictions of the models directly in 
+   > Choose **1. Text Data (type 1)**, you can have access to all the data at each step. But for analysis choose **4. processed_and_linked (type 4)**.
+
+   > Then re run the script, choose **2. Numerical Data (type 2)**, and then type **1. processed (type 1)**.
+
+   > Note : In the menu, you can also select **Predictions (or 3)** to download the predictions of the models directly in 
   `data/processed/predictions`. If you do this, you can skip Steps 4–7 and go directly to Step 8 to regenerate prediction tables/figures.
   </details>
 
